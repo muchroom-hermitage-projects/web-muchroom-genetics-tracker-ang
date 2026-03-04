@@ -232,7 +232,7 @@ export class GraphBuilderService {
 
   private getRelationshipLabel(type: string): string {
     const labels: Record<string, string> = {
-      spore_to_agar: 'isolate',
+      spore_to_agar: 'germinate',
       transfer: 'transfer',
       clone_from_fruit: 'clone',
       fruit_to_spore: 'spore',
