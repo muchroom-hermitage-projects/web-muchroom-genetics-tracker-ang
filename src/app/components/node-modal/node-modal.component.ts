@@ -3,7 +3,12 @@ import { Component, Inject } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatDialog } from '@angular/material/dialog';
-import { Culture, CULTURE_TYPE_OPTIONS, CultureType } from '../../models/culture.model';
+import {
+  Culture,
+  CULTURE_TYPE_OPTIONS,
+  CultureType,
+  RelationshipType,
+} from '../../models/culture.model';
 import { CultureService, StrainOption } from '../../services/culture.service';
 import { AddChildModalComponent } from '../add-child-modal/add-child-modal.component';
 
@@ -19,8 +24,10 @@ export class NodeModalComponent {
   isNew: boolean;
   isRootNode = true;
   isManualLabel = false;
+  relationshipTypes = Object.values(RelationshipType);
   private resolvedStrainCode = '';
   private originalStrainPrefix = '';
+  private parentRelationshipId: string | null = null;
 
   constructor(
     private fb: FormBuilder,
@@ -30,9 +37,17 @@ export class NodeModalComponent {
     @Inject(MAT_DIALOG_DATA) public data: { culture: Culture; isNew?: boolean },
   ) {
     this.isNew = data.isNew || false;
-    this.isRootNode = this.isNew || !this.cultureService.getParent(data.culture.id);
+    this.isRootNode =
+      this.isNew || !this.cultureService.getParent(data.culture.id);
+
+    // Get parent relationship if it exists
+    const parentRel = !this.isNew ? this.cultureService.getParentRelationship(data.culture.id) : null;
+    this.parentRelationshipId = parentRel?.id || null;
+
     this.strainOptions = this.cultureService.getStrainOptions();
-    this.originalStrainPrefix = this.extractStrainPrefix(data.culture?.strain || this.strainOptions[0]?.prefix || 'STR');
+    this.originalStrainPrefix = this.extractStrainPrefix(
+      data.culture?.strain || this.strainOptions[0]?.prefix || 'STR',
+    );
 
     this.cultureForm = this.fb.group({
       label: [data.culture?.label || '', Validators.required],
@@ -42,9 +57,20 @@ export class NodeModalComponent {
       description: [data.culture?.description || ''],
       notes: [data.culture?.notes || ''],
       source: [data.culture?.source || ''],
-      dateCreated: [this.toDateTimeLocalInput(data.culture?.dateCreated || new Date()), Validators.required],
+      dateCreated: [
+        this.toDateTimeLocalInput(data.culture?.dateCreated || new Date()),
+        Validators.required,
+      ],
       isArchived: [data.culture?.metadata?.isArchived || false],
     });
+
+    // Add relationship type control if we have a parent relationship
+    if (parentRel) {
+      this.cultureForm.addControl(
+        'relationshipType',
+        this.fb.control(parentRel.type, Validators.required)
+      );
+    }
 
     this.refreshAutoLabel();
     this.cultureForm.valueChanges.subscribe(() => {
@@ -57,6 +83,14 @@ export class NodeModalComponent {
   onSave(): void {
     if (this.cultureForm.valid) {
       const formValue = this.cultureForm.value;
+
+      // Update relationship if it exists and was changed
+      if (this.parentRelationshipId && formValue.relationshipType) {
+        this.cultureService.updateRelationship(this.parentRelationshipId, {
+          type: formValue.relationshipType
+        });
+      }
+
       this.dialogRef.close({
         updates: {
           label: formValue.label,
@@ -118,7 +152,10 @@ export class NodeModalComponent {
       formValue.filialGeneration,
       formValue.dateCreated,
     );
-    this.cultureForm.patchValue({ label: generatedLabel }, { emitEvent: false });
+    this.cultureForm.patchValue(
+      { label: generatedLabel },
+      { emitEvent: false },
+    );
   }
 
   getStrainDisplayValue(): string {
@@ -133,7 +170,12 @@ export class NodeModalComponent {
     });
   }
 
-  private buildAutoLabel(strain: string, typeToken: string, filialGeneration: string, dateCreated: string): string {
+  private buildAutoLabel(
+    strain: string,
+    typeToken: string,
+    filialGeneration: string,
+    dateCreated: string,
+  ): string {
     const strainPart = (strain || 'STRAIN').trim().toUpperCase();
     const filialPart = (filialGeneration || 'F0').trim().toUpperCase();
     const datePart = this.formatLabelDate(dateCreated);
@@ -145,10 +187,18 @@ export class NodeModalComponent {
       return this.data.culture?.strain || 'STR-1';
     }
 
-    const normalizedPrefix = this.extractStrainPrefix(strainPrefix || this.originalStrainPrefix);
+    const normalizedPrefix = this.extractStrainPrefix(
+      strainPrefix || this.originalStrainPrefix,
+    );
 
     if (!this.isNew && normalizedPrefix === this.originalStrainPrefix) {
-      return this.data.culture?.strain || this.cultureService.suggestNextStrainCode(normalizedPrefix, this.data.culture?.id);
+      return (
+        this.data.culture?.strain ||
+        this.cultureService.suggestNextStrainCode(
+          normalizedPrefix,
+          this.data.culture?.id,
+        )
+      );
     }
 
     return this.cultureService.suggestNextStrainCode(

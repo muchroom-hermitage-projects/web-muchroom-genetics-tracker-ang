@@ -34,6 +34,15 @@
       </mat-form-field>
     </div>
 
+    <mat-form-field appearance="outline" class="full-width" *ngIf="cultureForm.contains('relationshipType')">
+      <mat-label>Relationship Type</mat-label>
+      <mat-select formControlName="relationshipType">
+        <mat-option *ngFor="let rel of relationshipTypes" [value]="rel">
+          {{ rel | titlecase | replace:'_':' ' }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
     <div class="form-row">
       <mat-form-field appearance="outline" class="half-width">
         <mat-label>Strain Family</mat-label>
