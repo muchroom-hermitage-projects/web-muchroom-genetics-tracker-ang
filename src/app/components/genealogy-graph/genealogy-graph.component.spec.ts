@@ -7,6 +7,7 @@ import { of } from 'rxjs';
 // Mock services
 class MockCultureService {
   getCultures() { return of([]); }
+  getFilteredCultures() { return of([]); }
   getRelationships() { return of([]); }
   getSelectedNodeId() { return of(null); }
   setSelectedNode(id: string | null) {}

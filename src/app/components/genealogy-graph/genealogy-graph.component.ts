@@ -41,7 +41,7 @@ export class GenealogyGraphComponent
   ngOnInit(): void {
     // Subscribe to data changes
     this.subscriptions.push(
-      this.cultureService.getCultures().subscribe((cultures) => {
+      this.cultureService.getFilteredCultures().subscribe((cultures) => {
         this.cultures = cultures;
         this.refreshGraph();
       }),
@@ -72,8 +72,18 @@ export class GenealogyGraphComponent
     }
   }
 
+  private getVisibleRelationships(): Relationship[] {
+    const visibleNodeIds = new Set(this.cultures.map((c) => c.id));
+    return this.relationships.filter(
+      (r) => visibleNodeIds.has(r.sourceId) && visibleNodeIds.has(r.targetId),
+    );
+  }
+
   private initGraph(): void {
-    const elements = this.graphBuilder.buildElements(this.cultures, this.relationships);
+    const elements = this.graphBuilder.buildElements(
+      this.cultures,
+      this.getVisibleRelationships(),
+    );
 
     this.cy = cytoscape({
       container: this.cyContainer.nativeElement,
@@ -121,7 +131,10 @@ export class GenealogyGraphComponent
   private refreshGraph(): void {
     if (!this.cy) return;
 
-    const elements = this.graphBuilder.buildElements(this.cultures, this.relationships);
+    const elements = this.graphBuilder.buildElements(
+      this.cultures,
+      this.getVisibleRelationships(),
+    );
     this.cy.elements().remove();
     this.cy.add(elements);
 
