@@ -1,0 +1,45 @@
+/* app.component.css */
+.app-toolbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+}
+
+.toolbar-spacer {
+  flex: 1 1 auto;
+}
+
+.sidenav-container {
+  position: absolute;
+  top: 64px;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+.sidenav {
+  width: 280px;
+  background-color: #fafafa;
+  border-right: 1px solid #e0e0e0;
+}
+
+.sidenav-content {
+  background-color: #f5f5f5;
+}
+
+.graph-wrapper {
+  height: 100%;
+  width: 100%;
+}
+
+@media (max-width: 600px) {
+  .sidenav-container {
+    top: 56px;
+  }
+
+  .sidenav {
+    width: 240px;
+  }
+}

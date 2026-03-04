@@ -18,10 +18,12 @@
     "importHelpers": true,
     "target": "es2020",
     "module": "es2020",
+    "skipLibCheck": true,
     "lib": [
       "es2020",
       "dom"
-    ]
+    ],
+    "allowSyntheticDefaultImports": true
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,
