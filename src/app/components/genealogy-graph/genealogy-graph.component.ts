@@ -7,14 +7,12 @@ import {
   ElementRef,
   OnDestroy,
 } from '@angular/core';
-import { MatDialog } from '@angular/material/dialog';
 import { Subscription } from 'rxjs';
 import cytoscape from 'cytoscape';
 import dagre from 'cytoscape-dagre';
 
 import { CultureService } from '../../services/culture.service';
 import { GraphBuilderService } from '../../services/graph-builder.service';
-import { NodeModalComponent } from '../node-modal/node-modal.component';
 import { Culture, Relationship } from '../../models/culture.model';
 
 // Register dagre layout
@@ -38,7 +36,6 @@ export class GenealogyGraphComponent
   constructor(
     private cultureService: CultureService,
     private graphBuilder: GraphBuilderService,
-    private dialog: MatDialog,
   ) {}
 
   ngOnInit(): void {
@@ -104,7 +101,6 @@ export class GenealogyGraphComponent
     this.cy.on('tap', 'node', (event) => {
       const node = event.target;
       this.cultureService.setSelectedNode(node.id());
-      this.openNodeModal(node.data('fullData'));
     });
 
     // Background click clears selection
@@ -181,23 +177,7 @@ export class GenealogyGraphComponent
     }
   }
 
-  private openNodeModal(culture: Culture): void {
-    const dialogRef = this.dialog.open(NodeModalComponent, {
-      width: '500px',
-      data: { culture: { ...culture } }, // Pass a copy
-    });
 
-    dialogRef.afterClosed().subscribe((result) => {
-      if (result) {
-        if (result.delete) {
-          this.cultureService.deleteCulture(culture.id);
-        } else {
-          // Update culture
-          this.cultureService.updateCulture(culture.id, result.updates);
-        }
-      }
-    });
-  }
 
   fitGraph(): void {
     this.cy.fit();
