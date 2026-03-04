@@ -23,6 +23,7 @@ export class GraphBuilderService {
         filial: culture.filialGeneration,
         description: culture.description,
         dateCreated: culture.dateCreated,
+        isArchived: culture.metadata?.isArchived || false,
         fullData: culture, // Store for reference
       },
       position: undefined, // Let layout handle positioning
@@ -205,6 +206,26 @@ export class GraphBuilderService {
           'overlay-opacity': '0.2',
           'overlay-color': '#ffd700',
         },
+      },
+
+      // Archived node styling
+      {
+        selector: 'node[?isArchived]',
+        style: {
+          'background-color': '#cfd8dc', // Light blue-grey
+          'border-color': '#b0bec5',
+          'color': '#90a4ae',
+          'background-image-opacity': 0.4,
+        }
+      },
+
+      // Selected archived node override
+      {
+        selector: 'node[?isArchived].selected',
+        style: {
+          'border-color': '#37474f', // Dark blue-grey
+          'overlay-color': '#37474f',
+        }
       },
     ];
   }
