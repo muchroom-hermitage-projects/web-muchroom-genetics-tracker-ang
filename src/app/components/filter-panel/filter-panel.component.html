@@ -1,0 +1,47 @@
+<!-- components/filter-panel/filter-panel.component.html -->
+<div class="filter-panel">
+  <h3>Filters</h3>
+
+  <form [formGroup]="filterForm">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Strain</mat-label>
+      <mat-select formControlName="strain">
+        <mat-option value="">All Strains</mat-option>
+        <mat-option *ngFor="let strain of strains" [value]="strain">
+          {{ strain }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Culture Type</mat-label>
+      <mat-select formControlName="type">
+        <mat-option value="">All Types</mat-option>
+        <mat-option *ngFor="let type of cultureTypes" [value]="type.value">
+          {{ type.label }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Filial Generation</mat-label>
+      <input matInput formControlName="filialGeneration" placeholder="F0, F1, etc.">
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Minimum Viability %</mat-label>
+      <input matInput type="number" formControlName="minViability" min="0" max="100">
+    </mat-form-field>
+
+    <mat-checkbox formControlName="showArchived">Show Archived</mat-checkbox>
+
+    <div class="filter-actions">
+      <button mat-button color="warn" (click)="resetFilters()" [disabled]="getActiveFilterCount() === 0">
+        Reset Filters
+      </button>
+      <span class="filter-count" *ngIf="getActiveFilterCount() > 0">
+        {{ getActiveFilterCount() }} active
+      </span>
+    </div>
+  </form>
+</div>

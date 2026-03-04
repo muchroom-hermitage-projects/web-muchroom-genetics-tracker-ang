@@ -1,0 +1,14 @@
+<!-- components/genealogy-graph/genealogy-graph.component.html -->
+<div class="graph-container">
+  <div class="graph-toolbar">
+    <button mat-icon-button (click)="fitGraph()" matTooltip="Fit to screen">
+      <mat-icon>zoom_out_map</mat-icon>
+    </button>
+    <button mat-icon-button (click)="resetLayout()" matTooltip="Reset layout">
+      <mat-icon>replay</mat-icon>
+    </button>
+    <span class="toolbar-spacer"></span>
+    <span class="node-count">{{ cultures.length }} cultures</span>
+  </div>
+  <div #cyContainer class="graph-area"></div>
+</div>

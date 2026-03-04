@@ -1,0 +1,39 @@
+<!-- app.component.html -->
+<mat-toolbar color="primary" class="app-toolbar">
+  <span>Mycology Genetics Tracker</span>
+  <span class="toolbar-spacer"></span>
+  <button mat-button (click)="addRootCulture()">
+    <mat-icon>add</mat-icon> Add Root Culture
+  </button>
+  <button mat-button [matMenuTriggerFor]="menu">
+    <mat-icon>menu</mat-icon>
+  </button>
+  <mat-menu #menu="matMenu">
+    <button mat-menu-item (click)="exportData()">Export Data</button>
+    <button mat-menu-item (click)="importData(importFileInput)">Import Data</button>
+    <mat-divider></mat-divider>
+    <button mat-menu-item (click)="showAbout()">About</button>
+  </mat-menu>
+</mat-toolbar>
+
+<input
+  #importFileInput
+  type="file"
+  accept=".json,application/json"
+  (change)="onImportFileSelected($event)"
+  hidden
+/>
+
+<mat-sidenav-container class="sidenav-container">
+  <mat-sidenav mode="side" opened class="sidenav">
+    <app-filter-panel></app-filter-panel>
+  </mat-sidenav>
+
+  <mat-sidenav-content class="sidenav-content">
+    <div class="graph-wrapper">
+      <app-genealogy-graph></app-genealogy-graph>
+    </div>
+  </mat-sidenav-content>
+</mat-sidenav-container>
+
+<app-culture-detail></app-culture-detail>

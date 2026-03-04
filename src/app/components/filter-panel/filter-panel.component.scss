@@ -1,0 +1,40 @@
+/* components/filter-panel/filter-panel.component.css */
+.filter-panel {
+  padding: 16px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.filter-panel h3 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  font-weight: 500;
+  color: #333;
+}
+
+.full-width {
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.filter-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.filter-count {
+  font-size: 12px;
+  color: #666;
+  background-color: #e0e0e0;
+  padding: 4px 8px;
+  border-radius: 12px;
+}
+
+mat-checkbox {
+  display: block;
+  margin: 8px 0;
+}
