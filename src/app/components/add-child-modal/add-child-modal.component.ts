@@ -16,6 +16,7 @@ export class AddChildModalComponent {
   relationshipTypes = Object.values(RelationshipType);
   isManualLabel = false;
   resolvedStrainCode = '';
+  resolvedStrainSegment = 1;
 
   constructor(
     private fb: FormBuilder,
@@ -39,6 +40,7 @@ export class AddChildModalComponent {
     const parent = this.getParent();
     if (parent) {
       this.resolvedStrainCode = parent.strain;
+      this.resolvedStrainSegment = parent.strainSegment || 1;
     }
 
     this.refreshAutoLabel();
@@ -69,6 +71,7 @@ export class AddChildModalComponent {
         label: formValue.label,
         type: formValue.type,
         strain: this.resolvedStrainCode,
+        strainSegment: this.resolvedStrainSegment,
         filialGeneration: formValue.filialGeneration,
         description: formValue.description,
         notes: formValue.notes,
@@ -103,11 +106,13 @@ export class AddChildModalComponent {
 
   private refreshAutoLabel(): void {
     const formValue = this.childForm.getRawValue();
-    this.resolvedStrainCode = this.cultureService.suggestChildStrainCode(
+    const strainInfo = this.cultureService.suggestChildStrainCode(
       this.data.parentId,
       formValue.type,
       formValue.relationshipType,
     );
+    this.resolvedStrainCode = strainInfo.strain;
+    this.resolvedStrainSegment = strainInfo.segment;
     const typeToken = this.resolveTypeToken(formValue.type, formValue.relationshipType);
     const generatedLabel = this.buildAutoLabel(
       this.resolvedStrainCode,

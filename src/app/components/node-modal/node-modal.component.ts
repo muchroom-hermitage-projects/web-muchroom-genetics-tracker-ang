@@ -26,6 +26,7 @@ export class NodeModalComponent {
   isManualLabel = false;
   relationshipTypes = Object.values(RelationshipType);
   private resolvedStrainCode = '';
+  private resolvedStrainSegment = 1;
   private originalStrainPrefix = '';
   private parentRelationshipId: string | null = null;
 
@@ -96,6 +97,7 @@ export class NodeModalComponent {
           label: formValue.label,
           type: formValue.type,
           strain: this.resolvedStrainCode,
+          strainSegment: this.resolvedStrainSegment,
           filialGeneration: formValue.filialGeneration,
           description: formValue.description,
           notes: formValue.notes,
@@ -144,7 +146,9 @@ export class NodeModalComponent {
 
   private refreshAutoLabel(): void {
     const formValue = this.cultureForm.getRawValue();
-    this.resolvedStrainCode = this.resolveStrainCode(formValue.strainPrefix);
+    const strainInfo = this.resolveStrainCode(formValue.strainPrefix);
+    this.resolvedStrainCode = strainInfo.strain;
+    this.resolvedStrainSegment = strainInfo.segment;
     const typeToken = this.resolveTypeToken(formValue.type);
     const generatedLabel = this.buildAutoLabel(
       this.resolvedStrainCode,
@@ -156,10 +160,6 @@ export class NodeModalComponent {
       { label: generatedLabel },
       { emitEvent: false },
     );
-  }
-
-  getStrainDisplayValue(): string {
-    return this.resolvedStrainCode;
   }
 
   private resolveTypeToken(type: CultureType): string {
@@ -182,9 +182,12 @@ export class NodeModalComponent {
     return `${strainPart}-${typeToken}-${filialPart}-${datePart}`;
   }
 
-  private resolveStrainCode(strainPrefix: string): string {
+  private resolveStrainCode(strainPrefix: string): { strain: string; segment: number } {
     if (!this.isRootNode) {
-      return this.data.culture?.strain || 'STR-1';
+      return {
+        strain: this.data.culture?.strain || 'STR-1',
+        segment: this.data.culture?.strainSegment || 1
+      };
     }
 
     const normalizedPrefix = this.extractStrainPrefix(
@@ -192,12 +195,15 @@ export class NodeModalComponent {
     );
 
     if (!this.isNew && normalizedPrefix === this.originalStrainPrefix) {
-      return (
-        this.data.culture?.strain ||
-        this.cultureService.suggestNextStrainCode(
-          normalizedPrefix,
-          this.data.culture?.id,
-        )
+      if (this.data.culture?.strain) {
+        return {
+          strain: this.data.culture.strain,
+          segment: this.data.culture.strainSegment || 1
+        };
+      }
+      return this.cultureService.suggestNextStrainCode(
+        normalizedPrefix,
+        this.data.culture?.id,
       );
     }
 

@@ -44,18 +44,10 @@
       </mat-select>
     </mat-form-field>
 
-    <div class="form-row">
-      <mat-form-field appearance="outline" class="half-width">
-        <mat-label>Strain Code</mat-label>
-        <input matInput [value]="resolvedStrainCode" readonly>
-        <mat-hint>Inherited unless creating new spores from fruit</mat-hint>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline" class="half-width">
-        <mat-label>Source</mat-label>
-        <input matInput formControlName="source">
-      </mat-form-field>
-    </div>
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Source</mat-label>
+      <input matInput formControlName="source">
+    </mat-form-field>
 
     <mat-form-field appearance="outline" class="full-width">
       <mat-label>Creation Date & Time</mat-label>

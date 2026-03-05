@@ -36,7 +36,8 @@ export interface Culture {
   id: string;
   label: string;
   type: CultureType;
-  strain: string; // e.g., 'PLO-1', 'PSC-1'
+  strain: string; // e.g., 'POS-1', 'POS-2' - auto-generated full strain label
+  strainSegment: number; // The segment number for genetic tracking (e.g., 1, 2, 3)
   filialGeneration: string; // 'F0', 'F1', 'F1-T1', etc.
   description: string;
   dateCreated: Date;
