@@ -38,6 +38,16 @@ export class GenealogyGraphComponent
   private subscriptions: Subscription[] = [];
   subtreeMode: boolean = true;
 
+  get subtreeModeLabel(): string {
+    return this.subtreeMode ? 'Subtree Mode' : 'Cascade Drag';
+  }
+
+  get subtreeModeTooltip(): string {
+    return this.subtreeMode
+      ? 'Subtree Mode: Dragging a parent node moves all its descendants while maintaining relative positions.'
+      : 'Cascade Drag: Dragging a node moves only that specific node without affecting its children.';
+  }
+
   constructor(
     private cultureService: CultureService,
     private graphBuilder: GraphBuilderService,
