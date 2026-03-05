@@ -173,7 +173,7 @@ export class GraphBuilderService {
         },
       },
       {
-        selector: 'edge[relation="spore_to_agar"]',
+        selector: 'edge[relation="germination"]',
         style: {
           'line-color': '#8bc34a',
           'target-arrow-color': '#8bc34a',
@@ -232,12 +232,12 @@ export class GraphBuilderService {
 
   private getRelationshipLabel(type: string): string {
     const labels: Record<string, string> = {
-      spore_to_agar: 'germinate',
+      germination: 'germination',
       transfer: 'transfer',
-      clone_from_fruit: 'clone',
-      fruit_to_spore: 'spore',
-      inoculation: 'inoc',
-      fruiting: 'fruit',
+      clone_from_fruit: 'tissue cloning',
+      collecting_spores: 'collecting spores',
+      inoculation: 'inoculation',
+      fruiting: 'fruiting',
     };
     return labels[type] || type;
   }

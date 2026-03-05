@@ -695,7 +695,7 @@ export class CultureService {
         id: 'r1',
         sourceId: 'sp1',
         targetId: 'ag1',
-        type: RelationshipType.SPORE_TO_AGAR,
+        type: RelationshipType.GERMINATION,
       },
       {
         id: 'r2',
