@@ -66,6 +66,7 @@ export enum RelationshipType {
   FRUIT_TO_SPORE = 'fruit_to_spore',
   INOCULATION = 'inoculation', // LC to grain, etc.
   FRUITING = 'fruiting', // grain to fruit
+  COLLECTING_SPORES = 'collecting_spores',
 }
 
 export interface Strain {
