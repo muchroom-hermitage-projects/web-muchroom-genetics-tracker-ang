@@ -222,7 +222,7 @@ export class NodeModalComponent {
   private formatLabelDate(dateInput: string): string {
     const parsed = new Date(dateInput);
     if (Number.isNaN(parsed.getTime())) {
-      return '00000000T00:00';
+      return '0000/00/00T00:00';
     }
 
     const year = parsed.getFullYear();
@@ -230,7 +230,7 @@ export class NodeModalComponent {
     const day = String(parsed.getDate()).padStart(2, '0');
     const hours = String(parsed.getHours()).padStart(2, '0');
     const minutes = String(parsed.getMinutes()).padStart(2, '0');
-    return `${year}${month}${day}T${hours}:${minutes}`;
+    return `${year}/${month}/${day}T${hours}:${minutes}`;
   }
 
   private toDateTimeLocalInput(date: Date): string {
