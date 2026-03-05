@@ -8,12 +8,14 @@ import {
   OnDestroy,
 } from '@angular/core';
 import { Subscription } from 'rxjs';
+import { MatDialog } from '@angular/material/dialog';
 import cytoscape from 'cytoscape';
 import dagre from 'cytoscape-dagre';
 
 import { CultureService } from '../../services/culture.service';
 import { GraphBuilderService } from '../../services/graph-builder.service';
 import { Culture, Relationship } from '../../models/culture.model';
+import { NodeModalComponent } from '../node-modal/node-modal.component';
 
 // Register dagre layout
 cytoscape.use(dagre);
@@ -36,6 +38,7 @@ export class GenealogyGraphComponent
   constructor(
     private cultureService: CultureService,
     private graphBuilder: GraphBuilderService,
+    private dialog: MatDialog,
   ) {}
 
   ngOnInit(): void {
@@ -110,7 +113,13 @@ export class GenealogyGraphComponent
     // Node click handler
     this.cy.on('tap', 'node', (event) => {
       const node = event.target;
+      const mouseEvent = event.originalEvent as MouseEvent | undefined;
+      const isDoubleClick = mouseEvent?.detail === 2;
       this.cultureService.setSelectedNode(node.id());
+
+      if (isDoubleClick) {
+        this.openEditCultureModal(node.id());
+      }
     });
 
     // Background click clears selection
@@ -188,6 +197,35 @@ export class GenealogyGraphComponent
         console.warn('Error highlighting path:', e);
       }
     }
+  }
+
+  private openEditCultureModal(nodeId: string): void {
+    const culture = this.cultures.find((c) => c.id === nodeId);
+    if (!culture) {
+      return;
+    }
+
+    const dialogRef = this.dialog.open(NodeModalComponent, {
+      width: '500px',
+      data: {
+        culture: { ...culture },
+        isNew: false,
+      },
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (!result) {
+        return;
+      }
+
+      if (result.delete) {
+        this.cultureService.deleteCulture(culture.id);
+        this.cultureService.setSelectedNode(null);
+        return;
+      }
+
+      this.cultureService.updateCulture(culture.id, result.updates);
+    });
   }
 
 
