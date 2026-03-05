@@ -66,6 +66,9 @@ export class AddChildModalComponent {
     if (this.childForm.valid) {
       const formValue = this.childForm.value;
 
+      // Get parent to inherit contamination status
+      const parent = this.getParent();
+
       // Create new culture
       const newCulture = this.cultureService.addCulture({
         label: formValue.label,
@@ -79,6 +82,7 @@ export class AddChildModalComponent {
         dateCreated: new Date(formValue.dateCreated),
         metadata: {
           isArchived: !!formValue.isArchived,
+          isContaminated: parent?.metadata?.isContaminated || false, // Inherit contamination from parent
         },
       });
 

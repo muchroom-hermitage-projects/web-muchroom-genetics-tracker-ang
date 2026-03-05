@@ -63,6 +63,7 @@ export class NodeModalComponent {
         Validators.required,
       ],
       isArchived: [data.culture?.metadata?.isArchived || false],
+      isContaminated: [data.culture?.metadata?.isContaminated || false],
     });
 
     // Add relationship type control if we have a parent relationship
@@ -106,10 +107,15 @@ export class NodeModalComponent {
           metadata: {
             ...this.data.culture?.metadata,
             isArchived: !!formValue.isArchived,
+            isContaminated: !!formValue.isContaminated,
           },
         },
       });
     }
+  }
+
+  get isContaminated(): boolean {
+    return !!this.data.culture?.metadata?.isContaminated;
   }
 
   onAddChild(): void {

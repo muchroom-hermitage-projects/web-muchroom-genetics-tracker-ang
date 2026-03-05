@@ -1,5 +1,8 @@
 <!-- components/node-modal/node-modal.component.html -->
-<h2 mat-dialog-title>{{ isNew ? 'Add New Culture' : 'Edit Culture' }}</h2>
+<h2 mat-dialog-title>
+  {{ isNew ? 'Add New Culture' : 'Edit Culture' }}
+  <span class="contaminated-label" *ngIf="isContaminated">(contaminated)</span>
+</h2>
 
 <mat-dialog-content>
   <form [formGroup]="cultureForm" class="culture-form">
@@ -76,7 +79,10 @@
       <textarea matInput formControlName="notes" rows="3"></textarea>
     </mat-form-field>
 
-    <mat-checkbox formControlName="isArchived">Archived</mat-checkbox>
+    <div class="checkbox-row">
+      <mat-checkbox formControlName="isArchived">Archived</mat-checkbox>
+      <mat-checkbox formControlName="isContaminated">Contaminated</mat-checkbox>
+    </div>
   </form>
 </mat-dialog-content>
 

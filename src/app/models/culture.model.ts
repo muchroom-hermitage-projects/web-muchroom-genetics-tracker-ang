@@ -48,6 +48,7 @@ export interface Culture {
     cloneGeneration?: number;
     isMaster?: boolean;
     isArchived?: boolean;
+    isContaminated?: boolean;
     viability?: number; // percentage
   };
 }

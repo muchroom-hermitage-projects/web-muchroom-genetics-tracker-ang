@@ -24,6 +24,7 @@ export class GraphBuilderService {
         description: culture.description,
         dateCreated: culture.dateCreated,
         isArchived: culture.metadata?.isArchived || false,
+        isContaminated: culture.metadata?.isContaminated || false,
         fullData: culture, // Store for reference
       },
       position: undefined, // Let layout handle positioning
@@ -225,6 +226,40 @@ export class GraphBuilderService {
         style: {
           'border-color': '#37474f', // Dark blue-grey
           'overlay-color': '#37474f',
+        }
+      },
+
+      // Contaminated node styling
+      {
+        selector: 'node[?isContaminated]',
+        style: {
+          'background-color': '#ffcdd2', // Light red
+          'border-width': '3px',
+          'border-color': '#d32f2f', // Red
+          'border-style': 'solid',
+          'color': '#d32f2f', // Red label text
+        }
+      },
+
+      // Selected contaminated node (reddish instead of yellowish)
+      {
+        selector: 'node[?isContaminated].selected',
+        style: {
+          'border-width': '4px',
+          'border-color': '#b71c1c', // Dark red
+          'overlay-opacity': '0.3',
+          'overlay-color': '#d32f2f', // Red overlay
+        }
+      },
+
+      // Contaminated archived node (contamination takes precedence, more faded)
+      {
+        selector: 'node[?isContaminated][?isArchived]',
+        style: {
+          'background-color': '#ffebee', // More faded red
+          'border-color': '#e57373', // Lighter red border
+          'color': '#e57373', // Lighter red text
+          'background-image-opacity': 0.4,
         }
       },
     ];

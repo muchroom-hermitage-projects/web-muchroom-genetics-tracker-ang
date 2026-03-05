@@ -328,6 +328,7 @@ export class GenealogyGraphComponent
 
     const dialogRef = this.dialog.open(NodeModalComponent, {
       width: '500px',
+      panelClass: culture.metadata?.isContaminated ? 'contaminated-modal' : '',
       data: {
         culture: { ...culture },
         isNew: false,
