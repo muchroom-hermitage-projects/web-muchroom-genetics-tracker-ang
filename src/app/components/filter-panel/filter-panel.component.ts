@@ -20,6 +20,8 @@ export class FilterPanelComponent implements OnInit {
       type: [''],
       filialGeneration: [''],
       showArchived: [false],
+      showContaminated: [true],
+      showClean: [true],
       minViability: [0],
     });
   }
@@ -44,6 +46,8 @@ export class FilterPanelComponent implements OnInit {
       type: '',
       filialGeneration: '',
       showArchived: false,
+      showContaminated: true,
+      showClean: true,
       minViability: 0,
     });
   }

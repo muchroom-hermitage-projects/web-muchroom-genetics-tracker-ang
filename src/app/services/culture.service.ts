@@ -17,6 +17,8 @@ export interface FilterOptions {
   type: string;
   filialGeneration: string;
   showArchived: boolean;
+  showContaminated: boolean;
+  showClean: boolean;
   minViability: number;
 }
 
@@ -61,6 +63,8 @@ export class CultureService {
     type: '',
     filialGeneration: '',
     showArchived: false,
+    showContaminated: true,
+    showClean: true,
     minViability: 0,
   });
 
@@ -257,6 +261,8 @@ export class CultureService {
       type: '',
       filialGeneration: '',
       showArchived: false,
+      showContaminated: true,
+      showClean: true,
       minViability: 0,
     });
   }
@@ -305,6 +311,15 @@ export class CultureService {
 
       // Filter by archived status
       if (!filters.showArchived && culture.metadata?.isArchived) {
+        return false;
+      }
+
+      // Filter by contamination status
+      const isContaminated = culture.metadata?.isContaminated || false;
+      if (!filters.showContaminated && isContaminated) {
+        return false;
+      }
+      if (!filters.showClean && !isContaminated) {
         return false;
       }
 
@@ -935,6 +950,8 @@ export class CultureService {
       type: data.filters?.type ?? '',
       filialGeneration: data.filters?.filialGeneration ?? '',
       showArchived: data.filters?.showArchived ?? false,
+      showContaminated: data.filters?.showContaminated ?? true,
+      showClean: data.filters?.showClean ?? true,
       minViability: data.filters?.minViability ?? 0,
     };
 
