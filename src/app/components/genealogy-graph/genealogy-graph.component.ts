@@ -36,6 +36,7 @@ export class GenealogyGraphComponent
   cultures: Culture[] = [];
   private relationships: Relationship[] = [];
   private subscriptions: Subscription[] = [];
+  subtreeMode: boolean = true;
 
   constructor(
     private cultureService: CultureService,
@@ -179,6 +180,9 @@ export class GenealogyGraphComponent
 
       const draggedNode = event.target;
       if (draggedNode.id() !== draggedNodeId) return;
+
+      // Only apply to descendants if subtree mode is enabled
+      if (!this.subtreeMode) return;
 
       // Calculate delta from original position
       const originalPos = dragStartPositions.get(draggedNode.id());
