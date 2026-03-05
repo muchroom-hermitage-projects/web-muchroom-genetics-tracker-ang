@@ -13,23 +13,28 @@ export class GraphBuilderService {
     cultures: Culture[],
     relationships: Relationship[],
   ): cytoscape.ElementDefinition[] {
-    const nodes: cytoscape.ElementDefinition[] = cultures.map((culture) => ({
-      data: {
-        id: culture.id,
-        label: culture.label,
-        iconSvg: this.getTypeIconDataUri(culture.type),
-        type: culture.type,
-        strain: culture.strain,
-        filial: culture.filialGeneration,
-        description: culture.description,
-        dateCreated: culture.dateCreated,
-        isArchived: culture.metadata?.isArchived || false,
-        isContaminated: culture.metadata?.isContaminated || false,
-        fullData: culture, // Store for reference
-      },
-      position: undefined, // Let layout handle positioning
-      group: 'nodes',
-    }));
+    const nodes: cytoscape.ElementDefinition[] = cultures.map((culture) => {
+      const isArchived = culture.metadata?.isArchived || false;
+      const displayLabel = isArchived ? `${culture.label} (archived)` : culture.label;
+
+      return {
+        data: {
+          id: culture.id,
+          label: displayLabel,
+          iconSvg: this.getTypeIconDataUri(culture.type),
+          type: culture.type,
+          strain: culture.strain,
+          filial: culture.filialGeneration,
+          description: culture.description,
+          dateCreated: culture.dateCreated,
+          isArchived: isArchived,
+          isContaminated: culture.metadata?.isContaminated || false,
+          fullData: culture, // Store for reference
+        },
+        position: undefined, // Let layout handle positioning
+        group: 'nodes',
+      };
+    });
 
     const edges: cytoscape.ElementDefinition[] = relationships.map((rel) => ({
       data: {
