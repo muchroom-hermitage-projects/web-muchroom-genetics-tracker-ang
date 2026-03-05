@@ -1,10 +1,23 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NodeModalComponent } from './node-modal.component';
 import { CultureService } from '../../services/culture.service';
-import { MatDialogRef, MAT_DIALOG_DATA, MatDialog } from '@angular/material/dialog';
+import {
+  MatDialogRef,
+  MAT_DIALOG_DATA,
+  MatDialog,
+  MatDialogModule,
+} from '@angular/material/dialog';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Culture, CultureType, RelationshipType } from '../../models/culture.model';
 import { NO_ERRORS_SCHEMA, Pipe, PipeTransform } from '@angular/core';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
+import { MatInputModule } from '@angular/material/input';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 // Mock Pipe
 @Pipe({name: 'replace'})
@@ -20,6 +33,7 @@ const mockCulture: Culture = {
   label: 'Test Culture',
   type: CultureType.AGAR,
   strain: 'STR-1',
+  strainSegment: 1,
   filialGeneration: 'F0',
   description: 'Test Description',
   dateCreated: new Date(),
@@ -53,7 +67,18 @@ describe('NodeModalComponent', () => {
 
     await TestBed.configureTestingModule({
       declarations: [ NodeModalComponent, MockReplacePipe ],
-      imports: [ ReactiveFormsModule ],
+      imports: [
+        ReactiveFormsModule,
+        MatDialogModule,
+        MatFormFieldModule,
+        MatSelectModule,
+        MatInputModule,
+        MatCheckboxModule,
+        MatIconModule,
+        MatButtonModule,
+        MatTooltipModule,
+        NoopAnimationsModule,
+      ],
       schemas: [ NO_ERRORS_SCHEMA ],
       providers: [
         { provide: CultureService, useClass: MockCultureService },

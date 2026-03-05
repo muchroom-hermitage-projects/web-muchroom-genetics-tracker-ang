@@ -18,7 +18,9 @@ import { Culture, Relationship } from '../../models/culture.model';
 import { NodeModalComponent } from '../node-modal/node-modal.component';
 
 // Register dagre layout
-cytoscape.use(dagre);
+if (cytoscape && typeof cytoscape.use === 'function') {
+  cytoscape.use(dagre);
+}
 
 @Component({
   selector: 'app-genealogy-graph',
@@ -83,6 +85,10 @@ export class GenealogyGraphComponent
   }
 
   private initGraph(): void {
+    if (typeof cytoscape !== 'function') {
+      return;
+    }
+
     const elements = this.graphBuilder.buildElements(
       this.cultures,
       this.getVisibleRelationships(),
