@@ -4,7 +4,6 @@ import { MatDialog } from '@angular/material/dialog';
 import { CultureService } from '../../services/culture.service';
 import { Culture } from '../../models/culture.model';
 import { NodeModalComponent } from '../node-modal/node-modal.component';
-import { AddChildModalComponent } from '../add-child-modal/add-child-modal.component';
 
 @Component({
   selector: 'app-culture-detail',
@@ -117,7 +116,7 @@ export class CultureDetailComponent implements OnInit {
   addChild(): void {
     if (!this.selectedCulture) return;
 
-    const dialogRef = this.dialog.open(AddChildModalComponent, {
+    const dialogRef = this.dialog.open(NodeModalComponent, {
       width: '500px',
       data: { parentId: this.selectedCulture.id }
     });

@@ -1,10 +1,12 @@
 <!-- components/node-modal/node-modal.component.html -->
 <h2 mat-dialog-title>
-  {{ isNew ? 'Add New Culture' : 'Edit Culture' }}
+  {{ data.parentId ? 'Add Child Culture' : (isNew ? 'Add New Culture' : 'Edit Culture') }}
   <span class="contaminated-label" *ngIf="isContaminated">(contaminated)</span>
 </h2>
 
 <mat-dialog-content>
+  <p class="parent-info" *ngIf="data.parentId">Parent ID: {{ data.parentId }}</p>
+
   <form [formGroup]="cultureForm" class="culture-form">
     <mat-form-field appearance="outline" class="full-width">
       <mat-label>Label</mat-label>
@@ -88,11 +90,11 @@
 
 <mat-dialog-actions align="end">
   <button mat-button (click)="onClose()">Close</button>
-  <button mat-button color="warn" (click)="onDelete()" *ngIf="!isNew">Delete</button>
-  <button mat-raised-button color="primary" (click)="onAddChild()" *ngIf="!isNew">
+  <button mat-button color="warn" (click)="onDelete()" *ngIf="!isNew && !data.parentId">Delete</button>
+  <button mat-raised-button color="primary" (click)="onAddChild()" *ngIf="!isNew && !data.parentId">
     <mat-icon>add</mat-icon> Add Child
   </button>
   <button mat-raised-button color="primary" (click)="onSave()" [disabled]="!cultureForm.valid">
-    {{ isNew ? 'Create' : 'Save' }}
+    {{ data.parentId ? 'Create' : (isNew ? 'Create' : 'Save') }}
   </button>
 </mat-dialog-actions>

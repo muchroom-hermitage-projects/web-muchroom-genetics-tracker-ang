@@ -23,7 +23,6 @@ import { MatMenuModule } from '@angular/material/menu';
 import { AppComponent } from './app.component';
 import { GenealogyGraphComponent } from './components/genealogy-graph/genealogy-graph.component';
 import { NodeModalComponent } from './components/node-modal/node-modal.component';
-import { AddChildModalComponent } from './components/add-child-modal/add-child-modal.component';
 import { FilterPanelComponent } from './components/filter-panel/filter-panel.component';
 import { CultureDetailComponent } from './components/culture-detail/culture-detail.component';
 import { AboutModalComponent } from './components/about-modal/about-modal.component';
@@ -34,7 +33,6 @@ import { ReplacePipe } from './pipes/replace.pipe';
     AppComponent,
     GenealogyGraphComponent,
     NodeModalComponent,
-    AddChildModalComponent,
     FilterPanelComponent,
     CultureDetailComponent,
     AboutModalComponent,
