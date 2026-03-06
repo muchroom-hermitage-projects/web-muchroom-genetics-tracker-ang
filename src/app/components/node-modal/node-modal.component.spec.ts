@@ -110,4 +110,36 @@ describe('NodeModalComponent', () => {
     component.onSave();
     expect(cultureService.updateRelationship).toHaveBeenCalledWith('r1', { type: RelationshipType.CLONE_FROM_FRUIT });
   });
+
+  it('should disable strainPrefix control for non-root nodes', () => {
+    expect(component.isRootNode).toBeFalse();
+    expect(component.cultureForm.get('strainPrefix')?.disabled).toBeTrue();
+  });
+
+  it('should enable strainPrefix control for root nodes', () => {
+    const rootCulture = { ...mockCulture, id: 'root1' };
+    const rootComponent = new NodeModalComponent(
+      TestBed.inject(FormBuilder),
+      dialogRefSpy,
+      TestBed.inject(MatDialog),
+      cultureService as any,
+      { culture: rootCulture, isNew: false }
+    );
+
+    expect(rootComponent.isRootNode).toBeTrue();
+    expect(rootComponent.cultureForm.get('strainPrefix')?.disabled).toBeFalse();
+  });
+
+  it('should enable strainPrefix control for new nodes', () => {
+    const newComponent = new NodeModalComponent(
+      TestBed.inject(FormBuilder),
+      dialogRefSpy,
+      TestBed.inject(MatDialog),
+      cultureService as any,
+      { culture: mockCulture, isNew: true }
+    );
+
+    expect(newComponent.isRootNode).toBeTrue();
+    expect(newComponent.cultureForm.get('strainPrefix')?.disabled).toBeFalse();
+  });
 });
