@@ -12,13 +12,39 @@ import { of } from 'rxjs';
 import { CultureType } from '../../models/culture.model';
 
 const mockCultures = [
-  { id: '1', strain: 'STR-1', type: CultureType.SPORE, filialGeneration: 'F0', label: 'Test 1', dateCreated: new Date(), metadata: {} },
-  { id: '2', strain: 'STR-2', type: CultureType.AGAR, filialGeneration: 'F1', label: 'Test 2', dateCreated: new Date(), metadata: {} },
-  { id: '3', strain: 'STR-1', type: CultureType.LIQUID_CULTURE, filialGeneration: 'F0', label: 'Test 3', dateCreated: new Date(), metadata: {} },
+  {
+    id: '1',
+    strain: 'STR-1',
+    type: CultureType.SPORE,
+    filialGeneration: 'F0',
+    label: 'Test 1',
+    dateCreated: new Date(),
+    metadata: {},
+  },
+  {
+    id: '2',
+    strain: 'STR-2',
+    type: CultureType.AGAR,
+    filialGeneration: 'F1',
+    label: 'Test 2',
+    dateCreated: new Date(),
+    metadata: {},
+  },
+  {
+    id: '3',
+    strain: 'STR-1',
+    type: CultureType.LIQUID_CULTURE,
+    filialGeneration: 'F0',
+    label: 'Test 3',
+    dateCreated: new Date(),
+    metadata: {},
+  },
 ];
 
 const mockCultureService = {
-  getCultures: jasmine.createSpy('getCultures').and.returnValue(of(mockCultures)),
+  getCultures: jasmine
+    .createSpy('getCultures')
+    .and.returnValue(of(mockCultures)),
   updateFilters: jasmine.createSpy('updateFilters'),
 };
 
@@ -42,14 +68,14 @@ describe('FilterPanelComponent', () => {
         MatButtonModule,
         NoopAnimationsModule,
       ],
-      providers: [
-        { provide: CultureService, useValue: mockCultureService }
-      ]
+      providers: [{ provide: CultureService, useValue: mockCultureService }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(FilterPanelComponent);
     component = fixture.componentInstance;
-    cultureService = TestBed.inject(CultureService) as jasmine.SpyObj<CultureService>;
+    cultureService = TestBed.inject(
+      CultureService,
+    ) as jasmine.SpyObj<CultureService>;
     fixture.detectChanges();
   });
 
@@ -82,10 +108,12 @@ describe('FilterPanelComponent', () => {
 
     it('should populate culture types from model', () => {
       expect(component.cultureTypes.length).toBeGreaterThan(0);
-      expect(component.cultureTypes[0]).toEqual(jasmine.objectContaining({
-        value: jasmine.any(String),
-        label: jasmine.any(String)
-      }));
+      expect(component.cultureTypes[0]).toEqual(
+        jasmine.objectContaining({
+          value: jasmine.any(String),
+          label: jasmine.any(String),
+        }),
+      );
     });
   });
 
@@ -113,7 +141,7 @@ describe('FilterPanelComponent', () => {
       component.filterForm.patchValue(testFilters);
 
       expect(cultureService.updateFilters).toHaveBeenCalledWith(
-        jasmine.objectContaining(testFilters)
+        jasmine.objectContaining(testFilters),
       );
     });
 
@@ -174,7 +202,7 @@ describe('FilterPanelComponent', () => {
           showContaminated: true,
           showClean: true,
           minViability: 0,
-        })
+        }),
       );
     });
   });

@@ -149,7 +149,7 @@ export class GenealogyGraphComponent
     // Edge click handler
     this.cy.on('tap', 'edge', (event) => {
       const edge = event.target;
-      console.log('Edge clicked:', edge.data());
+      // console.log('Edge clicked:', edge.data());
       // You could show relationship details here
     });
 
@@ -317,7 +317,7 @@ export class GenealogyGraphComponent
           });
         }
       } catch (e) {
-        console.warn('Error highlighting path:', e);
+        // console.warn('Error highlighting path:', e);
       }
     }
   }
