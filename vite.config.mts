@@ -1,19 +1,22 @@
-import { defineConfig } from 'vitest/config';
-import { analogViteConfig } from '@analogjs/vitest-angular';
+/// <reference types="vitest" />
+import { defineConfig } from 'vite';
+import angular from '@analogjs/vite-plugin-angular';
+import tsconfigPaths from 'vite-tsconfig-paths';
 
-export default defineConfig((config) => ({
-  ...analogViteConfig({
-    root: config.root,
-  }),
+export default defineConfig({
+  plugins: [
+    angular(),
+    tsconfigPaths(),
+  ],
   test: {
-    ...config.test,
-    globals: true,
+    globals: true, // This allows us to use 'describe', 'it', 'expect' without importing them
     environment: 'jsdom',
     setupFiles: ['src/test-setup.ts'],
-    include: ['src/**/*.spec.ts'],
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'json', 'html'],
-    },
+    include: ['src/**/*.{test,spec}.ts'],
+    server: {
+      deps: {
+        inline: [/@angular/, /@analogjs/, /rxjs/, /zone.js/]
+      }
+    }
   },
-}));
+});

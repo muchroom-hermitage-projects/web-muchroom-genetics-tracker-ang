@@ -7,6 +7,7 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
+    "test:vitest": "vitest",
     "lint": "ng lint",
     "format": "prettier --write \"src/**/*.{ts,html,scss,css,json}\" && eslint \"src/**/*.ts\" --fix",
     "prepare": "husky"
@@ -14,12 +15,12 @@
   "private": true,
   "dependencies": {
     "@angular/animations": "^16.2.12",
-    "@angular/cdk": "^15.0.0",
+    "@angular/cdk": "^16.2.14",
     "@angular/common": "^16.2.12",
     "@angular/compiler": "^16.2.12",
     "@angular/core": "^16.2.12",
     "@angular/forms": "^16.2.12",
-    "@angular/material": "^15.0.0",
+    "@angular/material": "^16.2.14",
     "@angular/platform-browser": "^16.2.12",
     "@angular/platform-browser-dynamic": "^16.2.12",
     "@angular/router": "^16.2.12",
@@ -33,6 +34,7 @@
     "zone.js": "~0.13.3"
   },
   "devDependencies": {
+    "@analogjs/vite-plugin-angular": "^1.9.4",
     "@analogjs/vitest-angular": "^2.3.1",
     "@angular-devkit/build-angular": "^16.2.16",
     "@angular-eslint/builder": "16.3.1",
@@ -59,7 +61,9 @@
     "lint-staged": "^16.3.2",
     "prettier": "^2.7.1",
     "typescript": "~5.1.6",
-    "vitest": "^4.0.18"
+    "vite": "^5.4.11",
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^2.1.8"
   },
   "lint-staged": {
     "*.{ts,html,scss,css,json}": [
