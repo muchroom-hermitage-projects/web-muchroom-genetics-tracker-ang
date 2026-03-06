@@ -75,13 +75,13 @@ class MockCultureService {
   addRelationship = jasmine.createSpy('addRelationship');
   getCultures() {
     const subscription = {
-      unsubscribe: jasmine.createSpy('unsubscribe')
+      unsubscribe: jasmine.createSpy('unsubscribe'),
     };
     return {
       subscribe: (fn: any) => {
         fn([{ id: 'p1', strain: 'STR-1', strainSegment: 1, metadata: {} }]);
         return subscription;
-      }
+      },
     };
   }
 }

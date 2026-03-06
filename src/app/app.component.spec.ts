@@ -165,7 +165,7 @@ describe('AppComponent', () => {
       component = new AppComponent(
         matDialogMock as any,
         cultureServiceMock as any,
-        snackBarMock as any
+        snackBarMock as any,
       );
 
       component.exportData();
@@ -182,7 +182,7 @@ describe('AppComponent', () => {
       component = new AppComponent(
         matDialogMock as any,
         cultureServiceMock as any,
-        snackBarMock as any
+        snackBarMock as any,
       );
 
       component.exportData();
