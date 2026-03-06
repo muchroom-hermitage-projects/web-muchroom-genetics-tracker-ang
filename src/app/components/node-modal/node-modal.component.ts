@@ -74,6 +74,11 @@ export class NodeModalComponent {
       );
     }
 
+    // Disable strain family field for non-root nodes
+    if (!this.isRootNode) {
+      this.cultureForm.get('strainPrefix')?.disable();
+    }
+
     this.refreshAutoLabel();
     this.cultureForm.valueChanges.subscribe(() => {
       if (!this.isManualLabel) {

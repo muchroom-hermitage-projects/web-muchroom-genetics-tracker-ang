@@ -49,7 +49,7 @@
     <div class="form-row">
       <mat-form-field appearance="outline" class="half-width">
         <mat-label>Strain Family</mat-label>
-        <mat-select formControlName="strainPrefix" [disabled]="!isRootNode">
+        <mat-select formControlName="strainPrefix">
           <mat-option *ngFor="let strain of strainOptions" [value]="strain.prefix">
             {{ strain.label }}
           </mat-option>
