@@ -83,7 +83,7 @@
       class="full-width"
       *ngIf="cultureForm.contains('relationshipType')"
     >
-      <mat-label>Relationship Type</mat-label>
+      <mat-label>Relationship type with the parent node</mat-label>
       <mat-select formControlName="relationshipType">
         <mat-option *ngFor="let rel of relationshipTypes" [value]="rel">
           {{ rel | titlecase | replace : '_' : ' ' }}
