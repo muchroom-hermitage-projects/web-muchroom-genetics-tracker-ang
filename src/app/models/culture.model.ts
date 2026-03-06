@@ -17,7 +17,7 @@ export interface CultureTypeOption {
 }
 
 export const CULTURE_TYPE_OPTIONS: CultureTypeOption[] = [
-  { value: CultureType.SPORE, label: 'Spore (SP)', abbreviation: 'SP' },
+  { value: CultureType.SPORE, label: 'Spores (SP)', abbreviation: 'SP' },
   { value: CultureType.AGAR, label: 'Agar (AG)', abbreviation: 'AG' },
   { value: CultureType.LIQUID_CULTURE, label: 'Liquid culture (LC)', abbreviation: 'LC' },
   { value: CultureType.GRAIN_SPAWN, label: 'Grain spawn (GS)', abbreviation: 'GS' },
@@ -36,7 +36,8 @@ export interface Culture {
   id: string;
   label: string;
   type: CultureType;
-  strain: string; // e.g., 'PLO-1', 'PSC-1'
+  strain: string; // e.g., 'POS-1', 'POS-2' - auto-generated full strain label
+  strainSegment: number; // The segment number for genetic tracking (e.g., 1, 2, 3)
   filialGeneration: string; // 'F0', 'F1', 'F1-T1', etc.
   description: string;
   dateCreated: Date;
@@ -47,6 +48,7 @@ export interface Culture {
     cloneGeneration?: number;
     isMaster?: boolean;
     isArchived?: boolean;
+    isContaminated?: boolean;
     viability?: number; // percentage
   };
 }
@@ -60,12 +62,13 @@ export interface Relationship {
 }
 
 export enum RelationshipType {
-  SPORE_TO_AGAR = 'spore_to_agar',
+  GERMINATION = 'germination',
   TRANSFER = 'transfer',
-  CLONE_FROM_FRUIT = 'clone_from_fruit',
-  FRUIT_TO_SPORE = 'fruit_to_spore',
+  CLONE_FROM_FRUIT = 'clone from fruit',
   INOCULATION = 'inoculation', // LC to grain, etc.
   FRUITING = 'fruiting', // grain to fruit
+  COLLECTING_SPORES = 'collecting spores',
+  EXPANSION = 'expansion',
 }
 
 export interface Strain {

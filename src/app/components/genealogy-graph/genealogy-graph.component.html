@@ -7,6 +7,14 @@
     <button mat-icon-button (click)="resetLayout()" matTooltip="Reset layout">
       <mat-icon>replay</mat-icon>
     </button>
+    <div class="subtree-toggle-container">
+      <mat-checkbox [(ngModel)]="subtreeMode" color="primary" class="subtree-toggle">
+        {{ subtreeModeLabel }}
+      </mat-checkbox>
+      <mat-icon class="info-icon" [matTooltip]="subtreeModeTooltip" matTooltipPosition="below">
+        info_outline
+      </mat-icon>
+    </div>
     <span class="toolbar-spacer"></span>
     <span class="node-count">{{ cultures.length }} cultures</span>
   </div>

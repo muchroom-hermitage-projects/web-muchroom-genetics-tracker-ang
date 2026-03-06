@@ -1,7 +1,12 @@
 <!-- components/node-modal/node-modal.component.html -->
-<h2 mat-dialog-title>{{ isNew ? 'Add New Culture' : 'Edit Culture' }}</h2>
+<h2 mat-dialog-title>
+  {{ data.parentId ? 'Add Child Culture' : (isNew ? 'Add New Culture' : 'Edit Culture') }}
+  <span class="contaminated-label" *ngIf="isContaminated">(contaminated)</span>
+</h2>
 
 <mat-dialog-content>
+  <p class="parent-info" *ngIf="data.parentId">Parent ID: {{ data.parentId }}</p>
+
   <form [formGroup]="cultureForm" class="culture-form">
     <mat-form-field appearance="outline" class="full-width">
       <mat-label>Label</mat-label>
@@ -34,6 +39,16 @@
       </mat-form-field>
     </div>
 
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Strain Family</mat-label>
+      <mat-select formControlName="strainPrefix">
+        <mat-option *ngFor="let strain of strainOptions" [value]="strain.prefix">
+          {{ strain.label }}
+        </mat-option>
+      </mat-select>
+      <mat-hint *ngIf="!isRootNode">Inherited from parent culture</mat-hint>
+    </mat-form-field>
+
     <mat-form-field appearance="outline" class="full-width" *ngIf="cultureForm.contains('relationshipType')">
       <mat-label>Relationship Type</mat-label>
       <mat-select formControlName="relationshipType">
@@ -45,31 +60,16 @@
 
     <div class="form-row">
       <mat-form-field appearance="outline" class="half-width">
-        <mat-label>Strain Family</mat-label>
-        <mat-select formControlName="strainPrefix" [disabled]="!isRootNode">
-          <mat-option *ngFor="let strain of strainOptions" [value]="strain.prefix">
-            {{ strain.label }}
-          </mat-option>
-        </mat-select>
-        <mat-hint *ngIf="!isRootNode">Inherited from parent culture</mat-hint>
+        <mat-label>Creation Date & Time</mat-label>
+        <input matInput type="datetime-local" formControlName="dateCreated">
       </mat-form-field>
-
       <mat-form-field appearance="outline" class="half-width">
         <mat-label>Source</mat-label>
         <input matInput formControlName="source" placeholder="Vendor, wild, etc.">
       </mat-form-field>
     </div>
 
-    <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Strain Code</mat-label>
-      <input matInput [value]="getStrainDisplayValue()" readonly>
-      <mat-hint>Assigned automatically</mat-hint>
-    </mat-form-field>
 
-    <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Creation Date & Time</mat-label>
-      <input matInput type="datetime-local" formControlName="dateCreated">
-    </mat-form-field>
 
     <mat-form-field appearance="outline" class="full-width">
       <mat-label>Description</mat-label>
@@ -81,17 +81,20 @@
       <textarea matInput formControlName="notes" rows="3"></textarea>
     </mat-form-field>
 
-    <mat-checkbox formControlName="isArchived">Archived</mat-checkbox>
+    <div class="checkbox-row">
+      <mat-checkbox formControlName="isArchived">Archived</mat-checkbox>
+      <mat-checkbox formControlName="isContaminated">Contaminated</mat-checkbox>
+    </div>
   </form>
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
   <button mat-button (click)="onClose()">Close</button>
-  <button mat-button color="warn" (click)="onDelete()" *ngIf="!isNew">Delete</button>
-  <button mat-raised-button color="primary" (click)="onAddChild()" *ngIf="!isNew">
+  <button mat-button color="warn" (click)="onDelete()" *ngIf="!isNew && !data.parentId">Delete</button>
+  <button mat-raised-button color="primary" (click)="onAddChild()" *ngIf="!isNew && !data.parentId">
     <mat-icon>add</mat-icon> Add Child
   </button>
   <button mat-raised-button color="primary" (click)="onSave()" [disabled]="!cultureForm.valid">
-    {{ isNew ? 'Create' : 'Save' }}
+    {{ data.parentId ? 'Create' : (isNew ? 'Create' : 'Save') }}
   </button>
 </mat-dialog-actions>

@@ -8,15 +8,19 @@ import {
   OnDestroy,
 } from '@angular/core';
 import { Subscription } from 'rxjs';
+import { MatDialog } from '@angular/material/dialog';
 import cytoscape from 'cytoscape';
 import dagre from 'cytoscape-dagre';
 
 import { CultureService } from '../../services/culture.service';
 import { GraphBuilderService } from '../../services/graph-builder.service';
 import { Culture, Relationship } from '../../models/culture.model';
+import { NodeModalComponent } from '../node-modal/node-modal.component';
 
 // Register dagre layout
-cytoscape.use(dagre);
+if (cytoscape && typeof cytoscape.use === 'function') {
+  cytoscape.use(dagre);
+}
 
 @Component({
   selector: 'app-genealogy-graph',
@@ -32,10 +36,22 @@ export class GenealogyGraphComponent
   cultures: Culture[] = [];
   private relationships: Relationship[] = [];
   private subscriptions: Subscription[] = [];
+  subtreeMode: boolean = true;
+
+  get subtreeModeLabel(): string {
+    return this.subtreeMode ? 'Subtree Mode' : 'Cascade Drag';
+  }
+
+  get subtreeModeTooltip(): string {
+    return this.subtreeMode
+      ? 'Subtree Mode: Dragging a parent node moves all its descendants while maintaining relative positions.'
+      : 'Cascade Drag: Dragging a node moves only that specific node without affecting its children.';
+  }
 
   constructor(
     private cultureService: CultureService,
     private graphBuilder: GraphBuilderService,
+    private dialog: MatDialog,
   ) {}
 
   ngOnInit(): void {
@@ -80,6 +96,10 @@ export class GenealogyGraphComponent
   }
 
   private initGraph(): void {
+    if (typeof cytoscape !== 'function') {
+      return;
+    }
+
     const elements = this.graphBuilder.buildElements(
       this.cultures,
       this.getVisibleRelationships(),
@@ -110,7 +130,13 @@ export class GenealogyGraphComponent
     // Node click handler
     this.cy.on('tap', 'node', (event) => {
       const node = event.target;
+      const mouseEvent = event.originalEvent as MouseEvent | undefined;
+      const isDoubleClick = mouseEvent?.detail === 2;
       this.cultureService.setSelectedNode(node.id());
+
+      if (isDoubleClick) {
+        this.openEditCultureModal(node.id());
+      }
     });
 
     // Background click clears selection
@@ -126,6 +152,110 @@ export class GenealogyGraphComponent
       console.log('Edge clicked:', edge.data());
       // You could show relationship details here
     });
+
+    // Recursive subtree dragging
+    this.setupRecursiveSubtreeDragging();
+  }
+
+  private setupRecursiveSubtreeDragging(): void {
+    let dragStartPositions: Map<string, { x: number; y: number }> | null = null;
+    let draggedNodeId: string | null = null;
+
+    // Capture initial positions when drag starts
+    this.cy.on('grab', 'node', (event) => {
+      const draggedNode = event.target;
+      draggedNodeId = draggedNode.id();
+      dragStartPositions = new Map();
+
+      // Get all descendants recursively
+      const descendants = this.getDescendants(draggedNode);
+
+      // Store initial positions of dragged node and all descendants
+      dragStartPositions.set(draggedNode.id(), {
+        x: draggedNode.position('x'),
+        y: draggedNode.position('y'),
+      });
+
+      descendants.forEach((descendant: any) => {
+        dragStartPositions!.set(descendant.id(), {
+          x: descendant.position('x'),
+          y: descendant.position('y'),
+        });
+      });
+    });
+
+    // Apply delta to all descendants during drag
+    this.cy.on('drag', 'node', (event) => {
+      if (!dragStartPositions || !draggedNodeId) return;
+
+      const draggedNode = event.target;
+      if (draggedNode.id() !== draggedNodeId) return;
+
+      // Only apply to descendants if subtree mode is enabled
+      if (!this.subtreeMode) return;
+
+      // Calculate delta from original position
+      const originalPos = dragStartPositions.get(draggedNode.id());
+      if (!originalPos) return;
+
+      const dx = draggedNode.position('x') - originalPos.x;
+      const dy = draggedNode.position('y') - originalPos.y;
+
+      // Apply same offset to all descendants
+      const descendants = this.getDescendants(draggedNode);
+      descendants.forEach((descendant: any) => {
+        const descendantOriginalPos = dragStartPositions!.get(descendant.id());
+        if (descendantOriginalPos) {
+          descendant.position({
+            x: descendantOriginalPos.x + dx,
+            y: descendantOriginalPos.y + dy,
+          });
+        }
+      });
+    });
+
+    // Update global state when drag ends
+    this.cy.on('free', 'node', (event) => {
+      if (!dragStartPositions || !draggedNodeId) return;
+
+      const draggedNode = event.target;
+      if (draggedNode.id() !== draggedNodeId) return;
+
+      // Positions are already updated by Cytoscape and our drag handler
+      // Relative distances are maintained
+
+      // Clear drag state
+      dragStartPositions = null;
+      draggedNodeId = null;
+    });
+  }
+
+  private getDescendants(node: any): any[] {
+    const descendants: any[] = [];
+    const visited = new Set<string>();
+    const queue: any[] = [node];
+
+    while (queue.length > 0) {
+      const current = queue.shift()!;
+      const currentId = current.id();
+
+      if (visited.has(currentId)) continue;
+      visited.add(currentId);
+
+      // Get all outgoing edges (children)
+      const outgoingEdges = current.outgoers('edge');
+      outgoingEdges.forEach((edge: any) => {
+        const targetNode = edge.target();
+        const targetId = targetNode.id();
+
+        if (!visited.has(targetId)) {
+          descendants.push(targetNode);
+          queue.push(targetNode);
+        }
+      });
+    }
+
+    return descendants;
   }
 
   private refreshGraph(): void {
@@ -188,6 +318,36 @@ export class GenealogyGraphComponent
         console.warn('Error highlighting path:', e);
       }
     }
+  }
+
+  private openEditCultureModal(nodeId: string): void {
+    const culture = this.cultures.find((c) => c.id === nodeId);
+    if (!culture) {
+      return;
+    }
+
+    const dialogRef = this.dialog.open(NodeModalComponent, {
+      width: '500px',
+      panelClass: culture.metadata?.isContaminated ? 'contaminated-modal' : '',
+      data: {
+        culture: { ...culture },
+        isNew: false,
+      },
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (!result) {
+        return;
+      }
+
+      if (result.delete) {
+        this.cultureService.deleteCulture(culture.id);
+        this.cultureService.setSelectedNode(null);
+        return;
+      }
+
+      this.cultureService.updateCulture(culture.id, result.updates);
+    });
   }
 
 

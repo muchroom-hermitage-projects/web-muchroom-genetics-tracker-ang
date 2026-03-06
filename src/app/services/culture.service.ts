@@ -17,6 +17,8 @@ export interface FilterOptions {
   type: string;
   filialGeneration: string;
   showArchived: boolean;
+  showContaminated: boolean;
+  showClean: boolean;
   minViability: number;
 }
 
@@ -61,6 +63,8 @@ export class CultureService {
     type: '',
     filialGeneration: '',
     showArchived: false,
+    showContaminated: true,
+    showClean: true,
     minViability: 0,
   });
 
@@ -121,7 +125,11 @@ export class CultureService {
     return options;
   }
 
-  suggestNextStrainCode(prefix: string, currentCultureId?: string): string {
+  /**
+   * Suggests the next strain code for a given prefix.
+   * Returns both the full strain code and the segment number.
+   */
+  suggestNextStrainCode(prefix: string, currentCultureId?: string): { strain: string; segment: number } {
     const normalizedPrefix = (prefix || 'STR').toUpperCase();
     const maxIndex = this.cultures
       .getValue()
@@ -134,30 +142,48 @@ export class CultureService {
         return Math.max(max, parsed.index);
       }, 0);
 
-    return `${normalizedPrefix}-${maxIndex + 1}`;
+    const nextIndex = maxIndex + 1;
+    return {
+      strain: `${normalizedPrefix}-${nextIndex}`,
+      segment: nextIndex
+    };
   }
 
+  /**
+   * Suggests strain code and segment for a child culture.
+   * - For 'collecting_spores' relationships: increments segment by 1
+   * - For other relationships: inherits parent's strain and segment
+   */
   suggestChildStrainCode(
     parentId: string,
     childType: CultureType,
     relationshipType: RelationshipType | string,
-  ): string {
+  ): { strain: string; segment: number } {
     const parent = this.cultures
       .getValue()
       .find((culture) => culture.id === parentId);
     if (!parent) {
-      return 'STR-1';
+      return { strain: 'STR-1', segment: 1 };
     }
 
-    const isSexualReproduction =
-      relationshipType === RelationshipType.FRUIT_TO_SPORE &&
-      childType === CultureType.SPORE;
-    if (isSexualReproduction) {
+    // Check if this is a spore collection (sexual reproduction / filial generation change)
+    const isCollectingSpores = relationshipType === RelationshipType.COLLECTING_SPORES;
+
+    if (isCollectingSpores) {
+      // Increment the strain segment for new filial generation
       const parentPrefix = this.extractStrainPrefix(parent.strain);
-      return this.suggestNextStrainCode(parentPrefix);
+      const newSegment = (parent.strainSegment || 1) + 1;
+      return {
+        strain: `${parentPrefix}-${newSegment}`,
+        segment: newSegment
+      };
     }
 
-    return parent.strain;
+    // For all other relationships, inherit parent's strain and segment
+    return {
+      strain: parent.strain,
+      segment: parent.strainSegment || 1
+    };
   }
 
   suggestTypeToken(params: {
@@ -235,6 +261,8 @@ export class CultureService {
       type: '',
       filialGeneration: '',
       showArchived: false,
+      showContaminated: true,
+      showClean: true,
       minViability: 0,
     });
   }
@@ -286,6 +314,15 @@ export class CultureService {
         return false;
       }
 
+      // Filter by contamination status
+      const isContaminated = culture.metadata?.isContaminated || false;
+      if (!filters.showContaminated && isContaminated) {
+        return false;
+      }
+      if (!filters.showClean && !isContaminated) {
+        return false;
+      }
+
       // Filter by minimum viability
       if (
         filters.minViability > 0 &&
@@ -303,6 +340,7 @@ export class CultureService {
     const newCulture = {
       ...culture,
       id: uuidv4(),
+      strainSegment: culture.strainSegment || 1, // Ensure strainSegment is set
       metadata: {
         ...culture.metadata,
         isArchived: culture.metadata?.isArchived ?? false,
@@ -319,9 +357,45 @@ export class CultureService {
     const index = current.findIndex((c) => c.id === id);
     if (index !== -1) {
       const updated = [...current];
+      const oldCulture = updated[index];
       updated[index] = { ...updated[index], ...updates };
+
+      // If strain prefix changed (species/family changed), propagate to descendants
+      const oldPrefix = this.extractStrainPrefix(oldCulture.strain);
+      const newPrefix = updates.strain ? this.extractStrainPrefix(updates.strain) : oldPrefix;
+
+      if (newPrefix !== oldPrefix && updates.strain) {
+        this.propagateStrainPrefixChange(id, newPrefix, updated);
+      }
+
       this.cultures.next(updated);
     }
+  }
+
+  /**
+   * Propagates strain prefix changes to all descendants.
+   * Maintains +1 increment for each spore-based generation.
+   */
+  private propagateStrainPrefixChange(nodeId: string, newPrefix: string, cultures: Culture[]): void {
+    const relationships = this.relationships.getValue();
+    const children = relationships.filter(r => r.sourceId === nodeId);
+
+    children.forEach(rel => {
+      const childIndex = cultures.findIndex(c => c.id === rel.targetId);
+      if (childIndex !== -1) {
+        const child = cultures[childIndex];
+        const isCollectingSpores = rel.type === RelationshipType.COLLECTING_SPORES;
+
+        // Update child's strain with new prefix, keeping the same segment logic
+        cultures[childIndex] = {
+          ...child,
+          strain: `${newPrefix}-${child.strainSegment}`
+        };
+
+        // Recursively update descendants
+        this.propagateStrainPrefixChange(rel.targetId, newPrefix, cultures);
+      }
+    });
   }
 
   deleteCulture(id: string): void {
@@ -536,6 +610,7 @@ export class CultureService {
         label: 'POS-1 SP1',
         type: CultureType.SPORE,
         strain: 'POS-1',
+        strainSegment: 1,
         filialGeneration: 'F0',
         description: 'Original spore print from vendor',
         dateCreated: new Date('2024-01-20'),
@@ -548,6 +623,7 @@ export class CultureService {
         label: 'POS-1 AG1',
         type: CultureType.AGAR,
         strain: 'POS-1',
+        strainSegment: 1,
         filialGeneration: 'F0',
         description: 'First isolation from SP1',
         dateCreated: new Date('2024-01-25'),
@@ -559,6 +635,7 @@ export class CultureService {
         label: 'POS-1 AG1B',
         type: CultureType.AGAR,
         strain: 'POS-1',
+        strainSegment: 1,
         filialGeneration: 'F0-T1',
         description: 'First transfer from AG1',
         dateCreated: new Date('2024-02-01'),
@@ -570,6 +647,7 @@ export class CultureService {
         label: 'POS-1 LC1',
         type: CultureType.LIQUID_CULTURE,
         strain: 'POS-1',
+        strainSegment: 1,
         filialGeneration: 'F0',
         description: 'Liquid culture from AG1B',
         dateCreated: new Date('2024-02-05'),
@@ -581,6 +659,7 @@ export class CultureService {
         label: 'POS-1 GR1',
         type: CultureType.GRAIN_SPAWN,
         strain: 'POS-1',
+        strainSegment: 1,
         filialGeneration: 'F0',
         description: 'Rye grain from LC1',
         dateCreated: new Date('2024-02-10'),
@@ -592,6 +671,7 @@ export class CultureService {
         label: 'POS-1 FB1',
         type: CultureType.FRUIT,
         strain: 'POS-1',
+        strainSegment: 1,
         filialGeneration: 'F0',
         description: 'First flush from GR1',
         dateCreated: new Date('2024-03-01'),
@@ -603,6 +683,7 @@ export class CultureService {
         label: 'POS-1 CL1',
         type: CultureType.CLONE,
         strain: 'POS-1',
+        strainSegment: 1,
         filialGeneration: 'F1',
         description: 'Tissue clone from FB1',
         dateCreated: new Date('2024-03-05'),
@@ -614,6 +695,7 @@ export class CultureService {
         label: 'POS-1 AG1C',
         type: CultureType.AGAR,
         strain: 'POS-1',
+        strainSegment: 1,
         filialGeneration: 'F1-T1',
         description: 'First transfer from CL1',
         dateCreated: new Date('2024-03-10'),
@@ -628,7 +710,7 @@ export class CultureService {
         id: 'r1',
         sourceId: 'sp1',
         targetId: 'ag1',
-        type: RelationshipType.SPORE_TO_AGAR,
+        type: RelationshipType.GERMINATION,
       },
       {
         id: 'r2',
@@ -803,6 +885,7 @@ export class CultureService {
     const cultures = data.cultures.map((culture) => ({
       ...culture,
       dateCreated: new Date(culture.dateCreated),
+      strainSegment: culture.strainSegment || 1, // Ensure strainSegment is set for legacy data
       metadata: {
         ...culture.metadata,
         isArchived: culture.metadata?.isArchived ?? false,
@@ -867,6 +950,8 @@ export class CultureService {
       type: data.filters?.type ?? '',
       filialGeneration: data.filters?.filialGeneration ?? '',
       showArchived: data.filters?.showArchived ?? false,
+      showContaminated: data.filters?.showContaminated ?? true,
+      showClean: data.filters?.showClean ?? true,
       minViability: data.filters?.minViability ?? 0,
     };
 

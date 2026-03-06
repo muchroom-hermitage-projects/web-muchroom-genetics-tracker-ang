@@ -21,6 +21,18 @@ getTestBed().initTestEnvironment(
 );
 
 // Then we find all the tests.
-const context = require.context('./', true, /\.spec\.ts$/);
-// And load the modules.
-context.keys().forEach(context);
+const requireAny = require as unknown as { context?: typeof require.context; (id: string): unknown };
+
+if (typeof requireAny.context === 'function') {
+  const context = requireAny.context('./', true, /\.spec\.ts$/);
+  context.keys().forEach(context);
+} else {
+  const karma = (window as any).__karma__;
+  const karmaFiles = karma?.files ? Object.keys(karma.files) : [];
+  karmaFiles
+    .filter((file) => file.endsWith('.spec.ts'))
+    .forEach((file) => {
+      const normalized = file.replace(/^\/base\//, './');
+      requireAny(normalized);
+    });
+}

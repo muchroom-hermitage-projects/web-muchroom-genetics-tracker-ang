@@ -10,7 +10,6 @@ import {
   RelationshipType,
 } from '../../models/culture.model';
 import { CultureService, StrainOption } from '../../services/culture.service';
-import { AddChildModalComponent } from '../add-child-modal/add-child-modal.component';
 
 @Component({
   selector: 'app-node-modal',
@@ -26,6 +25,7 @@ export class NodeModalComponent {
   isManualLabel = false;
   relationshipTypes = Object.values(RelationshipType);
   private resolvedStrainCode = '';
+  private resolvedStrainSegment = 1;
   private originalStrainPrefix = '';
   private parentRelationshipId: string | null = null;
 
@@ -34,42 +34,83 @@ export class NodeModalComponent {
     private dialogRef: MatDialogRef<NodeModalComponent>,
     private dialog: MatDialog,
     private cultureService: CultureService,
-    @Inject(MAT_DIALOG_DATA) public data: { culture: Culture; isNew?: boolean },
+    @Inject(MAT_DIALOG_DATA) public data: { culture?: Culture; isNew?: boolean; parentId?: string },
   ) {
     this.isNew = data.isNew || false;
-    this.isRootNode =
-      this.isNew || !this.cultureService.getParent(data.culture.id);
 
-    // Get parent relationship if it exists
-    const parentRel = !this.isNew ? this.cultureService.getParentRelationship(data.culture.id) : null;
-    this.parentRelationshipId = parentRel?.id || null;
+    // Check if this is add-child mode
+    const isAddChildMode = !!data.parentId;
 
-    this.strainOptions = this.cultureService.getStrainOptions();
-    this.originalStrainPrefix = this.extractStrainPrefix(
-      data.culture?.strain || this.strainOptions[0]?.prefix || 'STR',
-    );
+    if (isAddChildMode) {
+      // Add child mode
+      this.isRootNode = false;
 
-    this.cultureForm = this.fb.group({
-      label: [data.culture?.label || '', Validators.required],
-      type: [data.culture?.type || CultureType.SPORE, Validators.required],
-      strainPrefix: [this.originalStrainPrefix, Validators.required],
-      filialGeneration: [data.culture?.filialGeneration || 'F0'],
-      description: [data.culture?.description || ''],
-      notes: [data.culture?.notes || ''],
-      source: [data.culture?.source || ''],
-      dateCreated: [
-        this.toDateTimeLocalInput(data.culture?.dateCreated || new Date()),
-        Validators.required,
-      ],
-      isArchived: [data.culture?.metadata?.isArchived || false],
-    });
+      // Get parent culture to inherit strain
+      const parent = this.getParent(data.parentId!);
+      this.resolvedStrainCode = parent?.strain || '';
+      this.resolvedStrainSegment = parent?.strainSegment || 1;
 
-    // Add relationship type control if we have a parent relationship
-    if (parentRel) {
-      this.cultureForm.addControl(
-        'relationshipType',
-        this.fb.control(parentRel.type, Validators.required)
+      this.strainOptions = this.cultureService.getStrainOptions();
+      this.originalStrainPrefix = this.extractStrainPrefix(parent?.strain || 'STR');
+
+      this.cultureForm = this.fb.group({
+        label: ['', Validators.required],
+        type: [CultureType.AGAR, Validators.required],
+        strainPrefix: [this.originalStrainPrefix, Validators.required],
+        filialGeneration: ['F0'],
+        description: [''],
+        notes: [''],
+        source: [''],
+        dateCreated: [this.toDateTimeLocalInput(new Date()), Validators.required],
+        isArchived: [false],
+        isContaminated: [parent?.metadata?.isContaminated || false],
+        relationshipType: ['', Validators.required],
+      });
+
+      // Disable strain family field for child nodes
+      this.cultureForm.get('strainPrefix')?.disable();
+    } else {
+      // Edit/Create root mode
+      this.isRootNode =
+        this.isNew || !this.cultureService.getParent(data.culture!.id);
+
+      // Get parent relationship if it exists
+      const parentRel = !this.isNew ? this.cultureService.getParentRelationship(data.culture!.id) : null;
+      this.parentRelationshipId = parentRel?.id || null;
+
+      this.strainOptions = this.cultureService.getStrainOptions();
+      this.originalStrainPrefix = this.extractStrainPrefix(
+        data.culture?.strain || this.strainOptions[0]?.prefix || 'STR',
       );
+
+      this.cultureForm = this.fb.group({
+        label: [data.culture?.label || '', Validators.required],
+        type: [data.culture?.type || CultureType.SPORE, Validators.required],
+        strainPrefix: [this.originalStrainPrefix, Validators.required],
+        filialGeneration: [data.culture?.filialGeneration || 'F0'],
+        description: [data.culture?.description || ''],
+        notes: [data.culture?.notes || ''],
+        source: [data.culture?.source || ''],
+        dateCreated: [
+          this.toDateTimeLocalInput(data.culture?.dateCreated || new Date()),
+          Validators.required,
+        ],
+        isArchived: [data.culture?.metadata?.isArchived || false],
+        isContaminated: [data.culture?.metadata?.isContaminated || false],
+      });
+
+      // Add relationship type control if we have a parent relationship
+      if (parentRel) {
+        this.cultureForm.addControl(
+          'relationshipType',
+          this.fb.control(parentRel.type, Validators.required)
+        );
+      }
+
+      // Disable strain family field for non-root nodes
+      if (!this.isRootNode) {
+        this.cultureForm.get('strainPrefix')?.disable();
+      }
     }
 
     this.refreshAutoLabel();
@@ -84,40 +125,89 @@ export class NodeModalComponent {
     if (this.cultureForm.valid) {
       const formValue = this.cultureForm.value;
 
-      // Update relationship if it exists and was changed
-      if (this.parentRelationshipId && formValue.relationshipType) {
-        this.cultureService.updateRelationship(this.parentRelationshipId, {
-          type: formValue.relationshipType
-        });
-      }
+      // Check if this is add-child mode
+      if (this.data.parentId) {
+        // Add child mode - create new culture and relationship
+        const parent = this.getParent(this.data.parentId);
 
-      this.dialogRef.close({
-        updates: {
+        const newCulture = this.cultureService.addCulture({
           label: formValue.label,
           type: formValue.type,
           strain: this.resolvedStrainCode,
+          strainSegment: this.resolvedStrainSegment,
           filialGeneration: formValue.filialGeneration,
           description: formValue.description,
           notes: formValue.notes,
           source: formValue.source,
           dateCreated: new Date(formValue.dateCreated),
           metadata: {
-            ...this.data.culture?.metadata,
             isArchived: !!formValue.isArchived,
+            isContaminated: parent?.metadata?.isContaminated || false,
           },
-        },
-      });
+        });
+
+        // Create relationship
+        this.cultureService.addRelationship({
+          sourceId: this.data.parentId,
+          targetId: newCulture.id,
+          type: formValue.relationshipType,
+        });
+
+        this.dialogRef.close({ success: true });
+      } else {
+        // Edit/Create root mode
+        // Update relationship if it exists and was changed
+        if (this.parentRelationshipId && formValue.relationshipType) {
+          this.cultureService.updateRelationship(this.parentRelationshipId, {
+            type: formValue.relationshipType
+          });
+        }
+
+        this.dialogRef.close({
+          updates: {
+            label: formValue.label,
+            type: formValue.type,
+            strain: this.resolvedStrainCode,
+            strainSegment: this.resolvedStrainSegment,
+            filialGeneration: formValue.filialGeneration,
+            description: formValue.description,
+            notes: formValue.notes,
+            source: formValue.source,
+            dateCreated: new Date(formValue.dateCreated),
+            metadata: {
+              ...this.data.culture?.metadata,
+              isArchived: !!formValue.isArchived,
+              isContaminated: !!formValue.isContaminated,
+            },
+          },
+        });
+      }
     }
+  }
+
+  get isContaminated(): boolean {
+    return !!this.data.culture?.metadata?.isContaminated;
+  }
+
+  private getParent(parentId: string): Culture | null {
+    let parent: Culture | null = null;
+    this.cultureService
+      .getCultures()
+      .subscribe((cultures) => {
+        parent = cultures.find((c) => c.id === parentId) || null;
+      })
+      .unsubscribe();
+    return parent;
   }
 
   onAddChild(): void {
     // First close this modal
     this.dialogRef.close();
 
-    // Then open add child modal
-    this.dialog.open(AddChildModalComponent, {
+    // Then open add child modal using NodeModalComponent
+    this.dialog.open(NodeModalComponent, {
       width: '500px',
-      data: { parentId: this.data.culture.id },
+      data: { parentId: this.data.culture!.id },
     });
   }
 
@@ -144,22 +234,46 @@ export class NodeModalComponent {
 
   private refreshAutoLabel(): void {
     const formValue = this.cultureForm.getRawValue();
-    this.resolvedStrainCode = this.resolveStrainCode(formValue.strainPrefix);
-    const typeToken = this.resolveTypeToken(formValue.type);
-    const generatedLabel = this.buildAutoLabel(
-      this.resolvedStrainCode,
-      typeToken,
-      formValue.filialGeneration,
-      formValue.dateCreated,
-    );
-    this.cultureForm.patchValue(
-      { label: generatedLabel },
-      { emitEvent: false },
-    );
-  }
 
-  getStrainDisplayValue(): string {
-    return this.resolvedStrainCode;
+    // Check if this is add-child mode
+    if (this.data.parentId) {
+      // Add child mode - use child strain logic
+      const strainInfo = this.cultureService.suggestChildStrainCode(
+        this.data.parentId,
+        formValue.type,
+        formValue.relationshipType,
+      );
+      this.resolvedStrainCode = strainInfo.strain;
+      this.resolvedStrainSegment = strainInfo.segment;
+      const typeToken = this.cultureService.suggestTypeToken({
+        type: formValue.type,
+        parentId: this.data.parentId,
+        relationshipType: formValue.relationshipType,
+      });
+      const generatedLabel = this.buildAutoLabel(
+        this.resolvedStrainCode,
+        typeToken,
+        formValue.filialGeneration,
+        formValue.dateCreated,
+      );
+      this.cultureForm.patchValue({ label: generatedLabel }, { emitEvent: false });
+    } else {
+      // Edit/Create root mode - use root strain logic
+      const strainInfo = this.resolveStrainCode(formValue.strainPrefix);
+      this.resolvedStrainCode = strainInfo.strain;
+      this.resolvedStrainSegment = strainInfo.segment;
+      const typeToken = this.resolveTypeToken(formValue.type);
+      const generatedLabel = this.buildAutoLabel(
+        this.resolvedStrainCode,
+        typeToken,
+        formValue.filialGeneration,
+        formValue.dateCreated,
+      );
+      this.cultureForm.patchValue(
+        { label: generatedLabel },
+        { emitEvent: false },
+      );
+    }
   }
 
   private resolveTypeToken(type: CultureType): string {
@@ -182,9 +296,12 @@ export class NodeModalComponent {
     return `${strainPart}-${typeToken}-${filialPart}-${datePart}`;
   }
 
-  private resolveStrainCode(strainPrefix: string): string {
+  private resolveStrainCode(strainPrefix: string): { strain: string; segment: number } {
     if (!this.isRootNode) {
-      return this.data.culture?.strain || 'STR-1';
+      return {
+        strain: this.data.culture?.strain || 'STR-1',
+        segment: this.data.culture?.strainSegment || 1
+      };
     }
 
     const normalizedPrefix = this.extractStrainPrefix(
@@ -192,12 +309,15 @@ export class NodeModalComponent {
     );
 
     if (!this.isNew && normalizedPrefix === this.originalStrainPrefix) {
-      return (
-        this.data.culture?.strain ||
-        this.cultureService.suggestNextStrainCode(
-          normalizedPrefix,
-          this.data.culture?.id,
-        )
+      if (this.data.culture?.strain) {
+        return {
+          strain: this.data.culture.strain,
+          segment: this.data.culture.strainSegment || 1
+        };
+      }
+      return this.cultureService.suggestNextStrainCode(
+        normalizedPrefix,
+        this.data.culture?.id,
       );
     }
 
@@ -210,7 +330,7 @@ export class NodeModalComponent {
   private formatLabelDate(dateInput: string): string {
     const parsed = new Date(dateInput);
     if (Number.isNaN(parsed.getTime())) {
-      return '00000000T00:00';
+      return '0000/00/00T00:00';
     }
 
     const year = parsed.getFullYear();
@@ -218,7 +338,7 @@ export class NodeModalComponent {
     const day = String(parsed.getDate()).padStart(2, '0');
     const hours = String(parsed.getHours()).padStart(2, '0');
     const minutes = String(parsed.getMinutes()).padStart(2, '0');
-    return `${year}${month}${day}T${hours}:${minutes}`;
+    return `${year}/${month}/${day}T${hours}:${minutes}`;
   }
 
   private toDateTimeLocalInput(date: Date): string {
