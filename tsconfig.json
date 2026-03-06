@@ -19,11 +19,9 @@
     "target": "es2020",
     "module": "es2020",
     "skipLibCheck": true,
-    "lib": [
-      "es2020",
-      "dom"
-    ],
-    "allowSyntheticDefaultImports": true
+    "lib": ["es2020", "dom"],
+    "allowSyntheticDefaultImports": true,
+    "useDefineForClassFields": false
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,
