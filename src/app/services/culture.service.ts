@@ -129,7 +129,10 @@ export class CultureService {
    * Suggests the next strain code for a given prefix.
    * Returns both the full strain code and the segment number.
    */
-  suggestNextStrainCode(prefix: string, currentCultureId?: string): { strain: string; segment: number } {
+  suggestNextStrainCode(
+    prefix: string,
+    currentCultureId?: string,
+  ): { strain: string; segment: number } {
     const normalizedPrefix = (prefix || 'STR').toUpperCase();
     const maxIndex = this.cultures
       .getValue()
@@ -145,7 +148,7 @@ export class CultureService {
     const nextIndex = maxIndex + 1;
     return {
       strain: `${normalizedPrefix}-${nextIndex}`,
-      segment: nextIndex
+      segment: nextIndex,
     };
   }
 
@@ -167,7 +170,8 @@ export class CultureService {
     }
 
     // Check if this is a spore collection (sexual reproduction / filial generation change)
-    const isCollectingSpores = relationshipType === RelationshipType.COLLECTING_SPORES;
+    const isCollectingSpores =
+      relationshipType === RelationshipType.COLLECTING_SPORES;
 
     if (isCollectingSpores) {
       // Increment the strain segment for new filial generation
@@ -175,14 +179,14 @@ export class CultureService {
       const newSegment = (parent.strainSegment || 1) + 1;
       return {
         strain: `${parentPrefix}-${newSegment}`,
-        segment: newSegment
+        segment: newSegment,
       };
     }
 
     // For all other relationships, inherit parent's strain and segment
     return {
       strain: parent.strain,
-      segment: parent.strainSegment || 1
+      segment: parent.strainSegment || 1,
     };
   }
 
@@ -362,7 +366,9 @@ export class CultureService {
 
       // If strain prefix changed (species/family changed), propagate to descendants
       const oldPrefix = this.extractStrainPrefix(oldCulture.strain);
-      const newPrefix = updates.strain ? this.extractStrainPrefix(updates.strain) : oldPrefix;
+      const newPrefix = updates.strain
+        ? this.extractStrainPrefix(updates.strain)
+        : oldPrefix;
 
       if (newPrefix !== oldPrefix && updates.strain) {
         this.propagateStrainPrefixChange(id, newPrefix, updated);
@@ -376,20 +382,25 @@ export class CultureService {
    * Propagates strain prefix changes to all descendants.
    * Maintains +1 increment for each spore-based generation.
    */
-  private propagateStrainPrefixChange(nodeId: string, newPrefix: string, cultures: Culture[]): void {
+  private propagateStrainPrefixChange(
+    nodeId: string,
+    newPrefix: string,
+    cultures: Culture[],
+  ): void {
     const relationships = this.relationships.getValue();
-    const children = relationships.filter(r => r.sourceId === nodeId);
+    const children = relationships.filter((r) => r.sourceId === nodeId);
 
-    children.forEach(rel => {
-      const childIndex = cultures.findIndex(c => c.id === rel.targetId);
+    children.forEach((rel) => {
+      const childIndex = cultures.findIndex((c) => c.id === rel.targetId);
       if (childIndex !== -1) {
         const child = cultures[childIndex];
-        const isCollectingSpores = rel.type === RelationshipType.COLLECTING_SPORES;
+        const isCollectingSpores =
+          rel.type === RelationshipType.COLLECTING_SPORES;
 
         // Update child's strain with new prefix, keeping the same segment logic
         cultures[childIndex] = {
           ...child,
-          strain: `${newPrefix}-${child.strainSegment}`
+          strain: `${newPrefix}-${child.strainSegment}`,
         };
 
         // Recursively update descendants

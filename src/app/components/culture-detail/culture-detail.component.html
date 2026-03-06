@@ -1,12 +1,21 @@
 <!-- components/culture-detail/culture-detail.component.html -->
 <div class="detail-panel" *ngIf="selectedCulture; else noSelection">
   <div class="detail-header">
-    <button mat-icon-button (click)="closeDetail()" class="close-btn" matTooltip="Close">
+    <button
+      mat-icon-button
+      (click)="closeDetail()"
+      class="close-btn"
+      matTooltip="Close"
+    >
       <mat-icon>close</mat-icon>
     </button>
     <h3>Culture Details</h3>
     <span class="header-spacer"></span>
-    <button mat-icon-button [matMenuTriggerFor]="menu" matTooltip="More options">
+    <button
+      mat-icon-button
+      [matMenuTriggerFor]="menu"
+      matTooltip="More options"
+    >
       <mat-icon>more_vert</mat-icon>
     </button>
     <mat-menu #menu="matMenu">
@@ -30,7 +39,11 @@
     <!-- Main Info Card -->
     <mat-card class="info-card" [class.archived]="isArchived()">
       <mat-card-header>
-        <div mat-card-avatar class="type-icon" [style.backgroundColor]="getTypeColor(selectedCulture.type)">
+        <div
+          mat-card-avatar
+          class="type-icon"
+          [style.backgroundColor]="getTypeColor(selectedCulture.type)"
+        >
           <mat-icon>{{ getTypeIcon(selectedCulture.type) }}</mat-icon>
         </div>
         <mat-card-title>{{ selectedCulture.label }}</mat-card-title>
@@ -43,19 +56,27 @@
         <div class="info-grid">
           <div class="info-row">
             <span class="info-label">Strain:</span>
-            <span class="info-value">{{ selectedCulture.strain || 'Not specified' }}</span>
+            <span class="info-value">{{
+              selectedCulture.strain || 'Not specified'
+            }}</span>
           </div>
           <div class="info-row">
             <span class="info-label">Filial Generation:</span>
-            <span class="info-value">{{ selectedCulture.filialGeneration }}</span>
+            <span class="info-value">{{
+              selectedCulture.filialGeneration
+            }}</span>
           </div>
           <div class="info-row">
             <span class="info-label">Created:</span>
-            <span class="info-value">{{ formatDate(selectedCulture.dateCreated) }}</span>
+            <span class="info-value">{{
+              formatDate(selectedCulture.dateCreated)
+            }}</span>
           </div>
           <div class="info-row">
             <span class="info-label">Source:</span>
-            <span class="info-value">{{ selectedCulture.source || 'Unknown' }}</span>
+            <span class="info-value">{{
+              selectedCulture.source || 'Unknown'
+            }}</span>
           </div>
           <div class="info-row" *ngIf="selectedCulture.metadata?.viability">
             <span class="info-label">Viability:</span>
@@ -83,7 +104,11 @@
       </mat-card-header>
       <mat-card-content>
         <div class="lineage-list">
-          <div *ngFor="let ancestor of ancestors" class="lineage-item" (click)="selectCulture(ancestor.id)">
+          <div
+            *ngFor="let ancestor of ancestors"
+            class="lineage-item"
+            (click)="selectCulture(ancestor.id)"
+          >
             <span class="lineage-label">{{ ancestor.label }}</span>
             <span class="lineage-type">({{ ancestor.type }})</span>
             <mat-icon class="lineage-arrow">arrow_forward</mat-icon>
@@ -109,7 +134,10 @@
               *ngFor="let desc of descendants"
               (click)="selectCulture(desc.id)"
               [class]="'type-' + desc.type"
-              matTooltip="{{ desc.type }}: {{ desc.description || 'No description' }}">
+              matTooltip="{{ desc.type }}: {{
+                desc.description || 'No description'
+              }}"
+            >
               {{ desc.label }}
               <span class="chip-type">{{ desc.type }}</span>
             </mat-chip>
@@ -119,7 +147,10 @@
     </mat-card>
 
     <!-- Empty State for No Descendants -->
-    <mat-card class="empty-card" *ngIf="descendants.length === 0 && selectedCulture">
+    <mat-card
+      class="empty-card"
+      *ngIf="descendants.length === 0 && selectedCulture"
+    >
       <mat-card-content>
         <p>No descendants yet. Add a child culture to continue the line.</p>
       </mat-card-content>
@@ -127,10 +158,20 @@
 
     <!-- Action Buttons -->
     <div class="detail-actions">
-      <button mat-raised-button color="primary" (click)="editCulture()" matTooltip="Edit this culture">
+      <button
+        mat-raised-button
+        color="primary"
+        (click)="editCulture()"
+        matTooltip="Edit this culture"
+      >
         <mat-icon>edit</mat-icon> Edit
       </button>
-      <button mat-raised-button color="accent" (click)="addChild()" matTooltip="Add a child culture">
+      <button
+        mat-raised-button
+        color="accent"
+        (click)="addChild()"
+        matTooltip="Add a child culture"
+      >
         <mat-icon>add</mat-icon> Add Child
       </button>
     </div>

@@ -10,7 +10,7 @@ import { CultureType } from './models/culture.model';
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.scss']
+  styleUrls: ['./app.component.scss'],
 })
 export class AppComponent {
   title = 'mycology-genetics-tracker';
@@ -18,7 +18,7 @@ export class AppComponent {
   constructor(
     private dialog: MatDialog,
     private cultureService: CultureService,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
   ) {}
 
   addRootCulture(): void {
@@ -34,14 +34,14 @@ export class AppComponent {
           notes: '',
           dateCreated: new Date(),
         },
-        isNew: true
-      }
+        isNew: true,
+      },
     });
 
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {
         this.cultureService.addCulture({
-          ...result.updates
+          ...result.updates,
         });
       }
     });
@@ -77,8 +77,11 @@ export class AppComponent {
         this.cultureService.importDataFromJson(String(reader.result ?? ''));
         this.snackBar.open('Data imported', 'Close', { duration: 2500 });
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Import failed';
-        this.snackBar.open(`Import failed: ${message}`, 'Close', { duration: 5000 });
+        const message =
+          error instanceof Error ? error.message : 'Import failed';
+        this.snackBar.open(`Import failed: ${message}`, 'Close', {
+          duration: 5000,
+        });
       } finally {
         input.value = '';
       }

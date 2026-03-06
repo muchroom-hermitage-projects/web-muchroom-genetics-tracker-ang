@@ -8,10 +8,18 @@
       <mat-icon>replay</mat-icon>
     </button>
     <div class="subtree-toggle-container">
-      <mat-checkbox [(ngModel)]="subtreeMode" color="primary" class="subtree-toggle">
+      <mat-checkbox
+        [(ngModel)]="subtreeMode"
+        color="primary"
+        class="subtree-toggle"
+      >
         {{ subtreeModeLabel }}
       </mat-checkbox>
-      <mat-icon class="info-icon" [matTooltip]="subtreeModeTooltip" matTooltipPosition="below">
+      <mat-icon
+        class="info-icon"
+        [matTooltip]="subtreeModeTooltip"
+        matTooltipPosition="below"
+      >
         info_outline
       </mat-icon>
     </div>

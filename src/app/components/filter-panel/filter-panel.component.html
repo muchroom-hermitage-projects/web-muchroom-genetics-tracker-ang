@@ -25,22 +25,39 @@
 
     <mat-form-field appearance="outline" class="full-width">
       <mat-label>Filial Generation</mat-label>
-      <input matInput formControlName="filialGeneration" placeholder="F0, F1, etc.">
+      <input
+        matInput
+        formControlName="filialGeneration"
+        placeholder="F0, F1, etc."
+      />
     </mat-form-field>
 
     <mat-form-field appearance="outline" class="full-width">
       <mat-label>Minimum Viability %</mat-label>
-      <input matInput type="number" formControlName="minViability" min="0" max="100">
+      <input
+        matInput
+        type="number"
+        formControlName="minViability"
+        min="0"
+        max="100"
+      />
     </mat-form-field>
 
     <div class="checkboxes-section">
       <mat-checkbox formControlName="showArchived">Show Archived</mat-checkbox>
-      <mat-checkbox formControlName="showContaminated">Show Contaminated</mat-checkbox>
+      <mat-checkbox formControlName="showContaminated"
+        >Show Contaminated</mat-checkbox
+      >
       <mat-checkbox formControlName="showClean">Show Clean</mat-checkbox>
     </div>
 
     <div class="filter-actions">
-      <button mat-button color="warn" (click)="resetFilters()" [disabled]="getActiveFilterCount() === 0">
+      <button
+        mat-button
+        color="warn"
+        (click)="resetFilters()"
+        [disabled]="getActiveFilterCount() === 0"
+      >
         Reset Filters
       </button>
       <span class="filter-count" *ngIf="getActiveFilterCount() > 0">

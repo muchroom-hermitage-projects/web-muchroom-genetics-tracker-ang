@@ -36,7 +36,7 @@ import { ReplacePipe } from './pipes/replace.pipe';
     FilterPanelComponent,
     CultureDetailComponent,
     AboutModalComponent,
-    ReplacePipe
+    ReplacePipe,
   ],
   imports: [
     BrowserModule,
@@ -58,7 +58,7 @@ import { ReplacePipe } from './pipes/replace.pipe';
     MatTooltipModule,
     MatSnackBarModule,
     MatCheckboxModule,
-    MatMenuModule
+    MatMenuModule,
   ],
   providers: [],
   bootstrap: [AppComponent],

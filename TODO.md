@@ -17,3 +17,13 @@ and all new children created from it after marking its "contaminated" state shol
 { value: CultureType.CASTELLANI_WATER, label: 'Castellani water (CW)', abbreviation: 'CW' },
 
 
+- Adding options to rename relations
+- Adding option to add/remove relations (under the hood relations have uuids assigned to them)
+- Relation
+- Add option to rename species
+- Adding option to add/remove mushroom species
+- Add option to add new localStorage keys
+  - keys are then added to "saved states" dropdown
+  - the app should load data from the one that is currently selected
+  - add option to remove the saved state
+  - add option to giva a name to an imported/exported state json

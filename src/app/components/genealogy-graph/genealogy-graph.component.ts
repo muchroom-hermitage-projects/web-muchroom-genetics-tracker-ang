@@ -82,7 +82,7 @@ export class GenealogyGraphComponent
   }
 
   ngOnDestroy(): void {
-    this.subscriptions.forEach(sub => sub.unsubscribe());
+    this.subscriptions.forEach((sub) => sub.unsubscribe());
     if (this.cy) {
       this.cy.destroy();
     }
@@ -118,8 +118,8 @@ export class GenealogyGraphComponent
         rankSep: 100,
         rankDir: 'TB',
         ranker: 'network-simplex',
-        animate: false
-      } as any,  // Type assertion to bypass the strict name check
+        animate: false,
+      } as any, // Type assertion to bypass the strict name check
       userZoomingEnabled: true,
       userPanningEnabled: true,
       boxSelectionEnabled: false,
@@ -280,7 +280,7 @@ export class GenealogyGraphComponent
       animationDuration: 500,
       // Add these to improve tree layout
       spacingFactor: 1.5,
-      nodeDimensionsIncludeLabels: true
+      nodeDimensionsIncludeLabels: true,
     } as any); // Use type assertion to bypass TypeScript's strict checking
 
     layout.run();
@@ -305,7 +305,9 @@ export class GenealogyGraphComponent
           if (visited.has(currentId)) continue;
           visited.add(currentId);
 
-          const incomingEdges = this.cy.getElementById(currentId).incomers('edge');
+          const incomingEdges = this.cy
+            .getElementById(currentId)
+            .incomers('edge');
           incomingEdges.forEach((edge: any) => {
             const sourceId = edge.data('source');
             if (sourceId && !visited.has(sourceId)) {
@@ -350,8 +352,6 @@ export class GenealogyGraphComponent
     });
   }
 
-
-
   fitGraph(): void {
     this.cy.fit();
   }
@@ -367,7 +367,7 @@ export class GenealogyGraphComponent
       animate: true,
       animationDuration: 500,
       spacingFactor: 1.5,
-      nodeDimensionsIncludeLabels: true
+      nodeDimensionsIncludeLabels: true,
     } as any);
 
     layout.run();

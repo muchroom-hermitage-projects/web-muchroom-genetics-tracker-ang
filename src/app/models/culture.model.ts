@@ -19,15 +19,29 @@ export interface CultureTypeOption {
 export const CULTURE_TYPE_OPTIONS: CultureTypeOption[] = [
   { value: CultureType.SPORE, label: 'Spores (SP)', abbreviation: 'SP' },
   { value: CultureType.AGAR, label: 'Agar (AG)', abbreviation: 'AG' },
-  { value: CultureType.LIQUID_CULTURE, label: 'Liquid culture (LC)', abbreviation: 'LC' },
-  { value: CultureType.GRAIN_SPAWN, label: 'Grain spawn (GS)', abbreviation: 'GS' },
+  {
+    value: CultureType.LIQUID_CULTURE,
+    label: 'Liquid culture (LC)',
+    abbreviation: 'LC',
+  },
+  {
+    value: CultureType.GRAIN_SPAWN,
+    label: 'Grain spawn (GS)',
+    abbreviation: 'GS',
+  },
   { value: CultureType.FRUIT, label: 'Fruit (FB)', abbreviation: 'FB' },
   { value: CultureType.CLONE, label: 'Clone (CL)', abbreviation: 'CL' },
   { value: CultureType.SLANT, label: 'Slant (SL)', abbreviation: 'SL' },
-  { value: CultureType.CASTELLANI_WATER, label: 'Castellani water (CW)', abbreviation: 'CW' },
+  {
+    value: CultureType.CASTELLANI_WATER,
+    label: 'Castellani water (CW)',
+    abbreviation: 'CW',
+  },
 ];
 
-export function getCultureTypeAbbreviation(type: CultureType | string | null | undefined): string {
+export function getCultureTypeAbbreviation(
+  type: CultureType | string | null | undefined,
+): string {
   const match = CULTURE_TYPE_OPTIONS.find((option) => option.value === type);
   return match?.abbreviation ?? 'XX';
 }

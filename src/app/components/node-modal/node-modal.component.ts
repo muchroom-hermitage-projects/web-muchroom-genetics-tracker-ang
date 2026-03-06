@@ -34,7 +34,8 @@ export class NodeModalComponent {
     private dialogRef: MatDialogRef<NodeModalComponent>,
     private dialog: MatDialog,
     private cultureService: CultureService,
-    @Inject(MAT_DIALOG_DATA) public data: { culture?: Culture; isNew?: boolean; parentId?: string },
+    @Inject(MAT_DIALOG_DATA)
+    public data: { culture?: Culture; isNew?: boolean; parentId?: string },
   ) {
     this.isNew = data.isNew || false;
 
@@ -51,7 +52,9 @@ export class NodeModalComponent {
       this.resolvedStrainSegment = parent?.strainSegment || 1;
 
       this.strainOptions = this.cultureService.getStrainOptions();
-      this.originalStrainPrefix = this.extractStrainPrefix(parent?.strain || 'STR');
+      this.originalStrainPrefix = this.extractStrainPrefix(
+        parent?.strain || 'STR',
+      );
 
       this.cultureForm = this.fb.group({
         label: ['', Validators.required],
@@ -61,7 +64,10 @@ export class NodeModalComponent {
         description: [''],
         notes: [''],
         source: [''],
-        dateCreated: [this.toDateTimeLocalInput(new Date()), Validators.required],
+        dateCreated: [
+          this.toDateTimeLocalInput(new Date()),
+          Validators.required,
+        ],
         isArchived: [false],
         isContaminated: [parent?.metadata?.isContaminated || false],
         relationshipType: ['', Validators.required],
@@ -75,7 +81,9 @@ export class NodeModalComponent {
         this.isNew || !this.cultureService.getParent(data.culture!.id);
 
       // Get parent relationship if it exists
-      const parentRel = !this.isNew ? this.cultureService.getParentRelationship(data.culture!.id) : null;
+      const parentRel = !this.isNew
+        ? this.cultureService.getParentRelationship(data.culture!.id)
+        : null;
       this.parentRelationshipId = parentRel?.id || null;
 
       this.strainOptions = this.cultureService.getStrainOptions();
@@ -103,7 +111,7 @@ export class NodeModalComponent {
       if (parentRel) {
         this.cultureForm.addControl(
           'relationshipType',
-          this.fb.control(parentRel.type, Validators.required)
+          this.fb.control(parentRel.type, Validators.required),
         );
       }
 
@@ -159,7 +167,7 @@ export class NodeModalComponent {
         // Update relationship if it exists and was changed
         if (this.parentRelationshipId && formValue.relationshipType) {
           this.cultureService.updateRelationship(this.parentRelationshipId, {
-            type: formValue.relationshipType
+            type: formValue.relationshipType,
           });
         }
 
@@ -256,7 +264,10 @@ export class NodeModalComponent {
         formValue.filialGeneration,
         formValue.dateCreated,
       );
-      this.cultureForm.patchValue({ label: generatedLabel }, { emitEvent: false });
+      this.cultureForm.patchValue(
+        { label: generatedLabel },
+        { emitEvent: false },
+      );
     } else {
       // Edit/Create root mode - use root strain logic
       const strainInfo = this.resolveStrainCode(formValue.strainPrefix);
@@ -296,11 +307,14 @@ export class NodeModalComponent {
     return `${strainPart}-${typeToken}-${filialPart}-${datePart}`;
   }
 
-  private resolveStrainCode(strainPrefix: string): { strain: string; segment: number } {
+  private resolveStrainCode(strainPrefix: string): {
+    strain: string;
+    segment: number;
+  } {
     if (!this.isRootNode) {
       return {
         strain: this.data.culture?.strain || 'STR-1',
-        segment: this.data.culture?.strainSegment || 1
+        segment: this.data.culture?.strainSegment || 1,
       };
     }
 
@@ -312,7 +326,7 @@ export class NodeModalComponent {
       if (this.data.culture?.strain) {
         return {
           strain: this.data.culture.strain,
-          segment: this.data.culture.strainSegment || 1
+          segment: this.data.culture.strainSegment || 1,
         };
       }
       return this.cultureService.suggestNextStrainCode(

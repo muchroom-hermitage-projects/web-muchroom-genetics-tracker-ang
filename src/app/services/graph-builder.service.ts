@@ -15,7 +15,9 @@ export class GraphBuilderService {
   ): cytoscape.ElementDefinition[] {
     const nodes: cytoscape.ElementDefinition[] = cultures.map((culture) => {
       const isArchived = culture.metadata?.isArchived || false;
-      const displayLabel = isArchived ? `${culture.label} (archived)` : culture.label;
+      const displayLabel = isArchived
+        ? `${culture.label} (archived)`
+        : culture.label;
 
       return {
         data: {
@@ -220,9 +222,9 @@ export class GraphBuilderService {
         style: {
           'background-color': '#cfd8dc', // Light blue-grey
           'border-color': '#b0bec5',
-          'color': '#90a4ae',
+          color: '#90a4ae',
           'background-image-opacity': 0.4,
-        }
+        },
       },
 
       // Selected archived node override
@@ -231,7 +233,7 @@ export class GraphBuilderService {
         style: {
           'border-color': '#37474f', // Dark blue-grey
           'overlay-color': '#37474f',
-        }
+        },
       },
 
       // Contaminated node styling
@@ -242,8 +244,8 @@ export class GraphBuilderService {
           'border-width': '3px',
           'border-color': '#d32f2f', // Red
           'border-style': 'solid',
-          'color': '#d32f2f', // Red label text
-        }
+          color: '#d32f2f', // Red label text
+        },
       },
 
       // Selected contaminated node (reddish instead of yellowish)
@@ -254,7 +256,7 @@ export class GraphBuilderService {
           'border-color': '#b71c1c', // Dark red
           'overlay-opacity': '0.3',
           'overlay-color': '#d32f2f', // Red overlay
-        }
+        },
       },
 
       // Contaminated archived node (contamination takes precedence, more faded)
@@ -263,9 +265,9 @@ export class GraphBuilderService {
         style: {
           'background-color': '#ffebee', // More faded red
           'border-color': '#e57373', // Lighter red border
-          'color': '#e57373', // Lighter red text
+          color: '#e57373', // Lighter red text
           'background-image-opacity': 0.4,
-        }
+        },
       },
     ];
   }
@@ -295,7 +297,8 @@ export class GraphBuilderService {
   }
 
   private getTypeIconSvg(type: CultureType): string {
-    const commonStart = '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24">';
+    const commonStart =
+      '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24">';
     const commonEnd = '</svg>';
 
     const icons: Record<CultureType, string> = {
@@ -317,6 +320,8 @@ export class GraphBuilderService {
         '<g fill="#fff"><path d="M12 5.2c-2.2 3.3-3.8 5.1-3.8 7.2A3.8 3.8 0 0 0 12 16.2a3.8 3.8 0 0 0 3.8-3.8c0-2.1-1.6-3.9-3.8-7.2z"/><circle cx="16.8" cy="15.8" r="1.3"/></g>',
     };
 
-    return `${commonStart}${icons[type] ?? icons[CultureType.SPORE]}${commonEnd}`;
+    return `${commonStart}${
+      icons[type] ?? icons[CultureType.SPORE]
+    }${commonEnd}`;
   }
 }

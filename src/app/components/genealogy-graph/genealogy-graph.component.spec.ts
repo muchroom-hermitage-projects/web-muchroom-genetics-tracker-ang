@@ -96,7 +96,9 @@ describe('GenealogyGraphComponent', () => {
 
     fixture = TestBed.createComponent(GenealogyGraphComponent);
     component = fixture.componentInstance;
-    cultureService = TestBed.inject(CultureService) as unknown as MockCultureService;
+    cultureService = TestBed.inject(
+      CultureService,
+    ) as unknown as MockCultureService;
     fixture.detectChanges();
   });
 

@@ -17,11 +17,11 @@ export class CultureDetailComponent implements OnInit {
 
   constructor(
     private cultureService: CultureService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
   ) {}
 
   ngOnInit(): void {
-    this.cultureService.getSelectedNodeId().subscribe(nodeId => {
+    this.cultureService.getSelectedNodeId().subscribe((nodeId) => {
       if (nodeId) {
         this.loadCultureDetails(nodeId);
       } else {
@@ -34,8 +34,8 @@ export class CultureDetailComponent implements OnInit {
 
   private loadCultureDetails(nodeId: string): void {
     // Get the selected culture
-    this.cultureService.getCultures().subscribe(cultures => {
-      this.selectedCulture = cultures.find(c => c.id === nodeId) || null;
+    this.cultureService.getCultures().subscribe((cultures) => {
+      this.selectedCulture = cultures.find((c) => c.id === nodeId) || null;
     });
 
     // Get ancestors (parents, grandparents, etc.)
@@ -54,14 +54,14 @@ export class CultureDetailComponent implements OnInit {
   // Get icon for culture type
   getTypeIcon(type: string): string {
     const icons: Record<string, string> = {
-      'spore': 'grass',
-      'agar': 'science',
-      'liquid_culture': 'opacity',
-      'grain_spawn': 'agriculture',
-      'fruit': 'spa',
-      'clone': 'call_split',
-      'slant': 'vertical_align_bottom',
-      'castellani_water': 'water_drop'
+      spore: 'grass',
+      agar: 'science',
+      liquid_culture: 'opacity',
+      grain_spawn: 'agriculture',
+      fruit: 'spa',
+      clone: 'call_split',
+      slant: 'vertical_align_bottom',
+      castellani_water: 'water_drop',
     };
     return icons[type] || 'circle';
   }
@@ -69,14 +69,14 @@ export class CultureDetailComponent implements OnInit {
   // NEW: Get color for culture type
   getTypeColor(type: string): string {
     const colors: Record<string, string> = {
-      'spore': '#8bc34a',
-      'agar': '#42a5f5',
-      'liquid_culture': '#ab47bc',
-      'grain_spawn': '#ffa726',
-      'fruit': '#ef5350',
-      'clone': '#7e57c2',
-      'slant': '#66bb6a',
-      'castellani_water': '#26c6da'
+      spore: '#8bc34a',
+      agar: '#42a5f5',
+      liquid_culture: '#ab47bc',
+      grain_spawn: '#ffa726',
+      fruit: '#ef5350',
+      clone: '#7e57c2',
+      slant: '#66bb6a',
+      castellani_water: '#26c6da',
     };
     return colors[type] || '#9e9e9e';
   }
@@ -94,17 +94,20 @@ export class CultureDetailComponent implements OnInit {
       width: '500px',
       data: {
         culture: { ...this.selectedCulture },
-        isNew: false
-      }
+        isNew: false,
+      },
     });
 
-    dialogRef.afterClosed().subscribe(result => {
+    dialogRef.afterClosed().subscribe((result) => {
       if (result) {
         if (result.delete) {
           this.deleteCulture();
         } else {
           // Update culture
-          this.cultureService.updateCulture(this.selectedCulture!.id, result.updates);
+          this.cultureService.updateCulture(
+            this.selectedCulture!.id,
+            result.updates,
+          );
           // Refresh details
           this.loadCultureDetails(this.selectedCulture!.id);
         }
@@ -118,10 +121,10 @@ export class CultureDetailComponent implements OnInit {
 
     const dialogRef = this.dialog.open(NodeModalComponent, {
       width: '500px',
-      data: { parentId: this.selectedCulture.id }
+      data: { parentId: this.selectedCulture.id },
     });
 
-    dialogRef.afterClosed().subscribe(result => {
+    dialogRef.afterClosed().subscribe((result) => {
       if (result?.success) {
         // Refresh the graph and details
         this.loadCultureDetails(this.selectedCulture!.id);
@@ -133,7 +136,9 @@ export class CultureDetailComponent implements OnInit {
   deleteCulture(): void {
     if (!this.selectedCulture) return;
 
-    const confirmation = confirm(`Are you sure you want to delete ${this.selectedCulture.label}? This cannot be undone.`);
+    const confirmation = confirm(
+      `Are you sure you want to delete ${this.selectedCulture.label}? This cannot be undone.`,
+    );
 
     if (confirmation) {
       this.cultureService.deleteCulture(this.selectedCulture.id);

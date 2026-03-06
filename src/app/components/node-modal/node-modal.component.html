@@ -1,25 +1,47 @@
 <!-- components/node-modal/node-modal.component.html -->
 <h2 mat-dialog-title>
-  {{ data.parentId ? 'Add Child Culture' : (isNew ? 'Add New Culture' : 'Edit Culture') }}
+  {{
+    data.parentId
+      ? 'Add Child Culture'
+      : isNew
+      ? 'Add New Culture'
+      : 'Edit Culture'
+  }}
   <span class="contaminated-label" *ngIf="isContaminated">(contaminated)</span>
 </h2>
 
 <mat-dialog-content>
-  <p class="parent-info" *ngIf="data.parentId">Parent ID: {{ data.parentId }}</p>
+  <p class="parent-info" *ngIf="data.parentId">
+    Parent ID: {{ data.parentId }}
+  </p>
 
   <form [formGroup]="cultureForm" class="culture-form">
     <mat-form-field appearance="outline" class="full-width">
       <mat-label>Label</mat-label>
-      <input matInput formControlName="label" [readonly]="!isManualLabel" placeholder="Auto-generated from fields below">
+      <input
+        matInput
+        formControlName="label"
+        [readonly]="!isManualLabel"
+        placeholder="Auto-generated from fields below"
+      />
       <button
         mat-icon-button
         matSuffix
         type="button"
         (click)="toggleLabelEdit()"
-        [matTooltip]="isManualLabel ? 'Disable manual label editing' : 'Enable manual label editing'">
+        [matTooltip]="
+          isManualLabel
+            ? 'Disable manual label editing'
+            : 'Enable manual label editing'
+        "
+      >
         <mat-icon>edit</mat-icon>
       </button>
-      <mat-hint>{{ isManualLabel ? 'Manual edit mode enabled' : 'Auto-generated. Click pencil to edit manually.' }}</mat-hint>
+      <mat-hint>{{
+        isManualLabel
+          ? 'Manual edit mode enabled'
+          : 'Auto-generated. Click pencil to edit manually.'
+      }}</mat-hint>
     </mat-form-field>
 
     <div class="form-row">
@@ -34,7 +56,11 @@
 
       <mat-form-field appearance="outline" class="half-width">
         <mat-label>Filial Generation</mat-label>
-        <input matInput formControlName="filialGeneration" placeholder="F0, F1, F1-T1">
+        <input
+          matInput
+          formControlName="filialGeneration"
+          placeholder="F0, F1, F1-T1"
+        />
         <mat-hint>e.g., F0, F1, F1-T1</mat-hint>
       </mat-form-field>
     </div>
@@ -42,18 +68,25 @@
     <mat-form-field appearance="outline" class="full-width">
       <mat-label>Strain Family</mat-label>
       <mat-select formControlName="strainPrefix">
-        <mat-option *ngFor="let strain of strainOptions" [value]="strain.prefix">
+        <mat-option
+          *ngFor="let strain of strainOptions"
+          [value]="strain.prefix"
+        >
           {{ strain.label }}
         </mat-option>
       </mat-select>
       <mat-hint *ngIf="!isRootNode">Inherited from parent culture</mat-hint>
     </mat-form-field>
 
-    <mat-form-field appearance="outline" class="full-width" *ngIf="cultureForm.contains('relationshipType')">
+    <mat-form-field
+      appearance="outline"
+      class="full-width"
+      *ngIf="cultureForm.contains('relationshipType')"
+    >
       <mat-label>Relationship Type</mat-label>
       <mat-select formControlName="relationshipType">
         <mat-option *ngFor="let rel of relationshipTypes" [value]="rel">
-          {{ rel | titlecase | replace:'_':' ' }}
+          {{ rel | titlecase | replace : '_' : ' ' }}
         </mat-option>
       </mat-select>
     </mat-form-field>
@@ -61,15 +94,17 @@
     <div class="form-row">
       <mat-form-field appearance="outline" class="half-width">
         <mat-label>Creation Date & Time</mat-label>
-        <input matInput type="datetime-local" formControlName="dateCreated">
+        <input matInput type="datetime-local" formControlName="dateCreated" />
       </mat-form-field>
       <mat-form-field appearance="outline" class="half-width">
         <mat-label>Source</mat-label>
-        <input matInput formControlName="source" placeholder="Vendor, wild, etc.">
+        <input
+          matInput
+          formControlName="source"
+          placeholder="Vendor, wild, etc."
+        />
       </mat-form-field>
     </div>
-
-
 
     <mat-form-field appearance="outline" class="full-width">
       <mat-label>Description</mat-label>
@@ -90,11 +125,28 @@
 
 <mat-dialog-actions align="end">
   <button mat-button (click)="onClose()">Close</button>
-  <button mat-button color="warn" (click)="onDelete()" *ngIf="!isNew && !data.parentId">Delete</button>
-  <button mat-raised-button color="primary" (click)="onAddChild()" *ngIf="!isNew && !data.parentId">
+  <button
+    mat-button
+    color="warn"
+    (click)="onDelete()"
+    *ngIf="!isNew && !data.parentId"
+  >
+    Delete
+  </button>
+  <button
+    mat-raised-button
+    color="primary"
+    (click)="onAddChild()"
+    *ngIf="!isNew && !data.parentId"
+  >
     <mat-icon>add</mat-icon> Add Child
   </button>
-  <button mat-raised-button color="primary" (click)="onSave()" [disabled]="!cultureForm.valid">
-    {{ data.parentId ? 'Create' : (isNew ? 'Create' : 'Save') }}
+  <button
+    mat-raised-button
+    color="primary"
+    (click)="onSave()"
+    [disabled]="!cultureForm.valid"
+  >
+    {{ data.parentId ? 'Create' : isNew ? 'Create' : 'Save' }}
   </button>
 </mat-dialog-actions>

@@ -19,14 +19,18 @@ import { AboutModalComponent } from './components/about-modal/about-modal.compon
 import { CultureType } from './models/culture.model';
 
 const matDialogMock = {
-  open: jasmine.createSpy('open').and.returnValue({ afterClosed: () => of(null) }),
+  open: jasmine
+    .createSpy('open')
+    .and.returnValue({ afterClosed: () => of(null) }),
 };
 const snackBarMock = {
   open: jasmine.createSpy('open'),
 };
 const cultureServiceMock = {
   addCulture: jasmine.createSpy('addCulture'),
-  exportDataAsJson: jasmine.createSpy('exportDataAsJson').and.returnValue('{"test":"data"}'),
+  exportDataAsJson: jasmine
+    .createSpy('exportDataAsJson')
+    .and.returnValue('{"test":"data"}'),
   importDataFromJson: jasmine.createSpy('importDataFromJson'),
 };
 
@@ -101,8 +105,8 @@ describe('AppComponent', () => {
             description: '',
             notes: '',
           }),
-          isNew: true
-        }
+          isNew: true,
+        },
       });
     });
 
@@ -115,14 +119,16 @@ describe('AppComponent', () => {
           label: 'Test Culture',
           type: CultureType.SPORE,
           strain: 'STR-1',
-        }
+        },
       };
 
       matDialogMock.open.and.returnValue({ afterClosed: () => of(mockResult) });
 
       component.addRootCulture();
 
-      expect(cultureServiceMock.addCulture).toHaveBeenCalledWith(mockResult.updates);
+      expect(cultureServiceMock.addCulture).toHaveBeenCalledWith(
+        mockResult.updates,
+      );
     });
 
     it('should not add culture when dialog is cancelled', () => {
@@ -147,7 +153,9 @@ describe('AppComponent', () => {
         download: '',
         click: jasmine.createSpy('click'),
       };
-      createElementSpy = spyOn(document, 'createElement').and.returnValue(mockAnchor);
+      createElementSpy = spyOn(document, 'createElement').and.returnValue(
+        mockAnchor,
+      );
       spyOn(URL, 'createObjectURL').and.returnValue('blob:mock-url');
       spyOn(URL, 'revokeObjectURL');
     });
@@ -171,7 +179,9 @@ describe('AppComponent', () => {
 
       component.exportData();
 
-      expect(snackBarMock.open).toHaveBeenCalledWith('Data exported', 'Close', { duration: 2500 });
+      expect(snackBarMock.open).toHaveBeenCalledWith('Data exported', 'Close', {
+        duration: 2500,
+      });
     });
   });
 
@@ -193,7 +203,9 @@ describe('AppComponent', () => {
     let mockFileReader: any;
 
     beforeEach(() => {
-      mockFile = new File(['{"test":"data"}'], 'test.json', { type: 'application/json' });
+      mockFile = new File(['{"test":"data"}'], 'test.json', {
+        type: 'application/json',
+      });
 
       mockFileReader = {
         readAsText: jasmine.createSpy('readAsText'),
@@ -210,7 +222,7 @@ describe('AppComponent', () => {
       component = fixture.componentInstance;
 
       const mockEvent = {
-        target: { files: [] }
+        target: { files: [] },
       } as any;
 
       component.onImportFileSelected(mockEvent);
@@ -223,7 +235,7 @@ describe('AppComponent', () => {
       component = fixture.componentInstance;
 
       const mockEvent = {
-        target: { files: [mockFile], value: 'test.json' }
+        target: { files: [mockFile], value: 'test.json' },
       } as any;
 
       component.onImportFileSelected(mockEvent);
@@ -231,8 +243,12 @@ describe('AppComponent', () => {
       // Trigger the onload callback
       mockFileReader.onload();
 
-      expect(cultureServiceMock.importDataFromJson).toHaveBeenCalledWith('{"test":"data"}');
-      expect(snackBarMock.open).toHaveBeenCalledWith('Data imported', 'Close', { duration: 2500 });
+      expect(cultureServiceMock.importDataFromJson).toHaveBeenCalledWith(
+        '{"test":"data"}',
+      );
+      expect(snackBarMock.open).toHaveBeenCalledWith('Data imported', 'Close', {
+        duration: 2500,
+      });
       expect(mockEvent.target.value).toBe('');
     });
 
@@ -243,7 +259,7 @@ describe('AppComponent', () => {
       cultureServiceMock.importDataFromJson.and.throwError('Invalid JSON');
 
       const mockEvent = {
-        target: { files: [mockFile], value: 'test.json' }
+        target: { files: [mockFile], value: 'test.json' },
       } as any;
 
       component.onImportFileSelected(mockEvent);
@@ -254,7 +270,7 @@ describe('AppComponent', () => {
       expect(snackBarMock.open).toHaveBeenCalledWith(
         'Import failed: Invalid JSON',
         'Close',
-        { duration: 5000 }
+        { duration: 5000 },
       );
       expect(mockEvent.target.value).toBe('');
     });
@@ -264,7 +280,7 @@ describe('AppComponent', () => {
       component = fixture.componentInstance;
 
       const mockEvent = {
-        target: { files: [mockFile], value: 'test.json' }
+        target: { files: [mockFile], value: 'test.json' },
       } as any;
 
       component.onImportFileSelected(mockEvent);
@@ -272,7 +288,11 @@ describe('AppComponent', () => {
       // Trigger the onerror callback
       mockFileReader.onerror();
 
-      expect(snackBarMock.open).toHaveBeenCalledWith('Failed to read file', 'Close', { duration: 5000 });
+      expect(snackBarMock.open).toHaveBeenCalledWith(
+        'Failed to read file',
+        'Close',
+        { duration: 5000 },
+      );
       expect(mockEvent.target.value).toBe('');
     });
   });

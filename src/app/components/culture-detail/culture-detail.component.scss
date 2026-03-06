@@ -6,7 +6,7 @@
   bottom: 0;
   width: 400px;
   background-color: white;
-  box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
   z-index: 90;
@@ -35,7 +35,9 @@
   padding: 16px;
 }
 
-.info-card, .lineage-card, .descendants-card {
+.info-card,
+.lineage-card,
+.descendants-card {
   margin-bottom: 16px;
 }
 
@@ -125,13 +127,15 @@
 }
 
 @media (max-width: 1200px) {
-  .detail-panel, .no-selection {
+  .detail-panel,
+  .no-selection {
     width: 350px;
   }
 }
 
 @media (max-width: 900px) {
-  .detail-panel, .no-selection {
+  .detail-panel,
+  .no-selection {
     width: 300px;
   }
 }
