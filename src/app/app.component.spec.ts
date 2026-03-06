@@ -161,8 +161,12 @@ describe('AppComponent', () => {
     });
 
     it('should export data and trigger download', () => {
-      const fixture = TestBed.createComponent(AppComponent);
-      component = fixture.componentInstance;
+      // Create component directly with mocks to avoid Material DOM issues
+      component = new AppComponent(
+        matDialogMock as any,
+        cultureServiceMock as any,
+        snackBarMock as any
+      );
 
       component.exportData();
 
@@ -174,8 +178,12 @@ describe('AppComponent', () => {
     });
 
     it('should show success snackbar after export', () => {
-      const fixture = TestBed.createComponent(AppComponent);
-      component = fixture.componentInstance;
+      // Create component directly with mocks to avoid Material DOM issues
+      component = new AppComponent(
+        matDialogMock as any,
+        cultureServiceMock as any,
+        snackBarMock as any
+      );
 
       component.exportData();
 
@@ -234,6 +242,10 @@ describe('AppComponent', () => {
       const fixture = TestBed.createComponent(AppComponent);
       component = fixture.componentInstance;
 
+      // Reset the spy before this test
+      cultureServiceMock.importDataFromJson.calls.reset();
+      cultureServiceMock.importDataFromJson.and.stub();
+
       const mockEvent = {
         target: { files: [mockFile], value: 'test.json' },
       } as any;
@@ -256,6 +268,8 @@ describe('AppComponent', () => {
       const fixture = TestBed.createComponent(AppComponent);
       component = fixture.componentInstance;
 
+      // Reset and reconfigure the spy for this test
+      cultureServiceMock.importDataFromJson.calls.reset();
       cultureServiceMock.importDataFromJson.and.throwError('Invalid JSON');
 
       const mockEvent = {

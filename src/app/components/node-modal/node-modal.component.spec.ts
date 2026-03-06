@@ -71,13 +71,17 @@ class MockCultureService {
     return { strain: 'STR-1', segment: 1 };
   }
   updateRelationship = jasmine.createSpy('updateRelationship');
-  addCulture = jasmine.createSpy('addCulture');
+  addCulture = jasmine.createSpy('addCulture').and.returnValue({ id: 'new1' });
   addRelationship = jasmine.createSpy('addRelationship');
   getCultures() {
+    const subscription = {
+      unsubscribe: jasmine.createSpy('unsubscribe')
+    };
     return {
-      subscribe: (fn: any) =>
-        fn([{ id: 'p1', strain: 'STR-1', strainSegment: 1 }]),
-      unsubscribe: () => {},
+      subscribe: (fn: any) => {
+        fn([{ id: 'p1', strain: 'STR-1', strainSegment: 1, metadata: {} }]);
+        return subscription;
+      }
     };
   }
 }
@@ -199,11 +203,6 @@ describe('NodeModalComponent', () => {
     });
 
     it('should create new culture and relationship in add-child mode', () => {
-      spyOn(cultureService, 'addCulture').and.returnValue({
-        id: 'new1',
-      } as any);
-      spyOn(cultureService, 'addRelationship');
-
       const childComponent = new NodeModalComponent(
         TestBed.inject(FormBuilder),
         dialogRefSpy,
