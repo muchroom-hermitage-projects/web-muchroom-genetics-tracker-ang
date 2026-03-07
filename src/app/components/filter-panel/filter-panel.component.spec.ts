@@ -12,7 +12,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatButtonModule } from '@angular/material/button';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { CultureService } from '../../services/culture.service';
+import { signal } from '@angular/core';
+import { CultureService, FilterOptions } from '../../services/culture.service';
 import { of } from 'rxjs';
 import { CultureType } from '../../models/culture.model';
 import { Mocked } from 'vitest';
@@ -47,9 +48,26 @@ const mockCultures = [
   },
 ];
 
+const defaultFilters: FilterOptions = {
+  strain: '',
+  type: '',
+  filialGeneration: '',
+  showArchived: false,
+  showContaminated: true,
+  showClean: true,
+  minViability: 0,
+};
+
+const mockFiltersState = signal<FilterOptions>({ ...defaultFilters });
+
 const mockCultureService = {
   getCultures: vi.fn().mockReturnValue(of(mockCultures)),
-  updateFilters: vi.fn(),
+  updateFilters: vi.fn((filters: Partial<FilterOptions>) => {
+    mockFiltersState.update((currentFilters) => ({
+      ...currentFilters,
+      ...filters,
+    }));
+  }),
 };
 
 describe('FilterPanelComponent', () => {
@@ -62,6 +80,7 @@ describe('FilterPanelComponent', () => {
       .mockClear()
       .mockReturnValue(of(mockCultures));
     mockCultureService.updateFilters.mockClear();
+    mockFiltersState.set({ ...defaultFilters });
 
     await TestBed.configureTestingModule({
       declarations: [FilterPanelComponent],
@@ -150,6 +169,19 @@ describe('FilterPanelComponent', () => {
         expect.objectContaining(testFilters),
       );
     });
+
+    it('should update signal-backed filters without entering a feedback loop', fakeAsync(() => {
+      const beforeCalls = cultureService.updateFilters.mock.calls.length;
+
+      component.filterForm.patchValue({ strain: 'STR-1' });
+      fixture.detectChanges();
+      tick();
+
+      expect(mockFiltersState().strain).toBe('STR-1');
+      expect(
+        cultureService.updateFilters.mock.calls.length - beforeCalls,
+      ).toBeLessThan(5);
+    }));
 
     it('should handle empty strain list', async () => {
       mockCultureService.getCultures.mockReturnValue(of([]));

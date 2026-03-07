@@ -295,11 +295,10 @@ export class CultureService {
 
   // New: Update filters
   updateFilters(filters: Partial<FilterOptions>): void {
-    const currentFilters = this.filters();
-    this.filters.set({
+    this.filters.update((currentFilters) => ({
       ...currentFilters,
       ...filters,
-    });
+    }));
   }
 
   // New: Reset filters to default
