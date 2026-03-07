@@ -237,6 +237,10 @@ export class NodeModalComponent {
     }
   }
 
+  formatRelationshipType(relationshipType: string): string {
+    return relationshipType.split('_').join(' ');
+  }
+
   private refreshAutoLabel(): void {
     const formValue = this.cultureForm.getRawValue();
 

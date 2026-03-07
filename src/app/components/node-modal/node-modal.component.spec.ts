@@ -13,7 +13,7 @@ import {
   CultureType,
   RelationshipType,
 } from '../../models/culture.model';
-import { NO_ERRORS_SCHEMA, Pipe, PipeTransform, signal } from '@angular/core';
+import { NO_ERRORS_SCHEMA, signal } from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatInputModule } from '@angular/material/input';
@@ -23,34 +23,13 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { Mocked } from 'vitest';
-
-// Mock Pipe
-@Pipe({ name: 'replace' })
-class MockReplacePipe implements PipeTransform {
-  transform(value: string, from: string, to: string): string {
-    return value;
-  }
-}
+import {
+  NODE_MODAL_MOCK_CULTURE,
+  NODE_MODAL_MOCK_RELATIONSHIP,
+} from '../../../testing/mocks';
 
 // Mock data
-const mockCulture: Culture = {
-  id: 'c1',
-  label: 'Test Culture',
-  type: CultureType.AGAR,
-  strain: 'STR-1',
-  strainSegment: 1,
-  filialGeneration: 'F0',
-  description: 'Test Description',
-  dateCreated: new Date(),
-  metadata: { isArchived: false },
-};
-
-const mockRelationship = {
-  id: 'r1',
-  sourceId: 'p1',
-  targetId: 'c1',
-  type: RelationshipType.TRANSFER,
-};
+const mockCulture: Culture = NODE_MODAL_MOCK_CULTURE;
 
 class MockCultureService {
   private cultures = signal([
@@ -61,7 +40,7 @@ class MockCultureService {
     return id === 'c1' ? { id: 'p1' } : null;
   }
   getParentRelationship(id: string) {
-    return id === 'c1' ? mockRelationship : null;
+    return id === 'c1' ? NODE_MODAL_MOCK_RELATIONSHIP : null;
   }
   getStrainOptions() {
     return [{ prefix: 'STR', label: 'Standard Strain' }];
@@ -95,7 +74,7 @@ describe('NodeModalComponent', () => {
     } as Mocked<MatDialogRef<NodeModalComponent>>;
 
     await TestBed.configureTestingModule({
-      declarations: [NodeModalComponent, MockReplacePipe],
+      declarations: [NodeModalComponent],
       imports: [
         ReactiveFormsModule,
         MatDialogModule,

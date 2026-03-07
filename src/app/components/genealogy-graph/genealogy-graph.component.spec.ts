@@ -10,8 +10,9 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { FormsModule } from '@angular/forms';
 import { NodeModalComponent } from '../node-modal/node-modal.component';
-import { Culture, CultureType } from '../../models/culture.model';
+import { Culture } from '../../models/culture.model';
 import { of } from 'rxjs';
+import { SAMPLE_CULTURE } from '../../../testing/mocks';
 
 class MockCultureService {
   deleteCulture = vi.fn();
@@ -59,18 +60,7 @@ class DialogSpy {
   }
 }
 
-const sampleCulture: Culture = {
-  id: 'node-1',
-  label: 'Sample',
-  type: CultureType.AGAR,
-  strain: 'STR-1',
-  strainSegment: 1,
-  filialGeneration: 'F0',
-  description: 'Sample',
-  dateCreated: new Date(),
-  metadata: { isArchived: false },
-  notes: '',
-};
+const sampleCulture: Culture = SAMPLE_CULTURE;
 
 describe('GenealogyGraphComponent', () => {
   let component: GenealogyGraphComponent;

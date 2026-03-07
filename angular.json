@@ -83,7 +83,6 @@
         "test": {
           "builder": "@analogjs/vitest-angular:test",
           "options": {
-            "main": "src/test.ts",
             "polyfills": "src/polyfills.ts",
             "tsConfig": "tsconfig.spec.json",
             "inlineStyleLanguage": "scss",

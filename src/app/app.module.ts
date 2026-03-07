@@ -13,12 +13,12 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatSidenavModule } from '@angular/material/sidenav';
-import { MatListModule } from '@angular/material/list';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatDividerModule } from '@angular/material/divider';
 
 import { AppComponent } from './app.component';
 import { GenealogyGraphComponent } from './components/genealogy-graph/genealogy-graph.component';
@@ -26,7 +26,6 @@ import { NodeModalComponent } from './components/node-modal/node-modal.component
 import { FilterPanelComponent } from './components/filter-panel/filter-panel.component';
 import { CultureDetailComponent } from './components/culture-detail/culture-detail.component';
 import { AboutModalComponent } from './components/about-modal/about-modal.component';
-import { ReplacePipe } from './pipes/replace.pipe';
 
 @NgModule({
   declarations: [
@@ -36,7 +35,6 @@ import { ReplacePipe } from './pipes/replace.pipe';
     FilterPanelComponent,
     CultureDetailComponent,
     AboutModalComponent,
-    ReplacePipe,
   ],
   imports: [
     BrowserModule,
@@ -52,12 +50,12 @@ import { ReplacePipe } from './pipes/replace.pipe';
     MatCardModule,
     MatToolbarModule,
     MatSidenavModule,
-    MatListModule,
     MatChipsModule,
     MatTooltipModule,
     MatSnackBarModule,
     MatCheckboxModule,
     MatMenuModule,
+    MatDividerModule,
   ],
   providers: [provideHttpClient()],
   bootstrap: [AppComponent],

@@ -17,51 +17,15 @@ import { CultureService, FilterOptions } from '../../services/culture.service';
 import { of } from 'rxjs';
 import { CultureType } from '../../models/culture.model';
 import { Mocked } from 'vitest';
+import {
+  DEFAULT_FILTERS,
+  FILTER_PANEL_MOCK_CULTURES,
+} from '../../../testing/mocks';
 
-const mockCultures = [
-  {
-    id: '1',
-    strain: 'STR-1',
-    type: CultureType.SPORE,
-    filialGeneration: 'F0',
-    label: 'Test 1',
-    dateCreated: new Date(),
-    metadata: {},
-  },
-  {
-    id: '2',
-    strain: 'STR-2',
-    type: CultureType.AGAR,
-    filialGeneration: 'F1',
-    label: 'Test 2',
-    dateCreated: new Date(),
-    metadata: {},
-  },
-  {
-    id: '3',
-    strain: 'STR-1',
-    type: CultureType.LIQUID_CULTURE,
-    filialGeneration: 'F0',
-    label: 'Test 3',
-    dateCreated: new Date(),
-    metadata: {},
-  },
-];
-
-const defaultFilters: FilterOptions = {
-  strain: '',
-  type: '',
-  filialGeneration: '',
-  showArchived: false,
-  showContaminated: true,
-  showClean: true,
-  minViability: 0,
-};
-
-const mockFiltersState = signal<FilterOptions>({ ...defaultFilters });
+const mockFiltersState = signal<FilterOptions>({ ...DEFAULT_FILTERS });
 
 const mockCultureService = {
-  getCultures: vi.fn().mockReturnValue(of(mockCultures)),
+  getCultures: vi.fn().mockReturnValue(of(FILTER_PANEL_MOCK_CULTURES)),
   updateFilters: vi.fn((filters: Partial<FilterOptions>) => {
     mockFiltersState.update((currentFilters) => ({
       ...currentFilters,
@@ -78,9 +42,9 @@ describe('FilterPanelComponent', () => {
   beforeEach(async () => {
     mockCultureService.getCultures
       .mockClear()
-      .mockReturnValue(of(mockCultures));
+      .mockReturnValue(of(FILTER_PANEL_MOCK_CULTURES));
     mockCultureService.updateFilters.mockClear();
-    mockFiltersState.set({ ...defaultFilters });
+    mockFiltersState.set({ ...DEFAULT_FILTERS });
 
     await TestBed.configureTestingModule({
       declarations: [FilterPanelComponent],

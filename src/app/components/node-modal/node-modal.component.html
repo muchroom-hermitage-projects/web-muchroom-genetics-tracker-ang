@@ -89,7 +89,7 @@
       <mat-select formControlName="relationshipType">
         @for (rel of relationshipTypes; track rel) {
         <mat-option [value]="rel">
-          {{ rel | titlecase | replace : '_' : ' ' }}
+          {{ formatRelationshipType(rel) | titlecase }}
         </mat-option>
         }
       </mat-select>

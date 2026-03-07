@@ -142,16 +142,8 @@ export class CultureService {
     return this.cultures.asReadonly();
   }
 
-  getRelationshipsSignal(): Signal<Relationship[]> {
-    return this.relationships.asReadonly();
-  }
-
   getSelectedNodeIdSignal(): Signal<string | null> {
     return this.selectedNodeId.asReadonly();
-  }
-
-  getFilteredCulturesSignal(): Signal<Culture[]> {
-    return this.filteredCulturesSignal;
   }
 
   getStrainOptions(): StrainOption[] {
