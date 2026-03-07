@@ -30,10 +30,10 @@
     "rxjs": "~7.5.0",
     "tslib": "^2.3.0",
     "uuid": "^9.0.0",
-    "zone.js": "0.14.2"
+    "zone.js": "0.14.10"
   },
   "devDependencies": {
-    "@analogjs/vite-plugin-angular": "^1.9.4",
+    "@analogjs/vite-plugin-angular": "1.9.4",
     "@analogjs/vitest-angular": "^2.3.1",
     "@angular-devkit/build-angular": "^17.3.17",
     "@angular-eslint/builder": "17.5.3",
@@ -49,6 +49,7 @@
     "@typescript-eslint/parser": "^7.2.0",
     "eslint": "^8.57.0",
     "husky": "^9.1.7",
+    "install": "^0.13.0",
     "jsdom": "^28.1.0",
     "lint-staged": "^16.3.2",
     "prettier": "^2.7.1",
@@ -56,6 +57,10 @@
     "vite": "^5.4.11",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^2.1.8"
+  },
+  "overrides": {
+    "zone.js": "0.14.10",
+    "typescript": "~5.4.5"
   },
   "lint-staged": {
     "*.{ts,html,scss,css,json}": [
