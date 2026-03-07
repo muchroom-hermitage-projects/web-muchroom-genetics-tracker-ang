@@ -12,16 +12,28 @@ import { afterEach, vi } from 'vitest';
 
 /* eslint-disable no-console */
 const originalConsoleError = console.error;
+const originalConsoleWarn = console.warn;
+
+const isMaterialThemeWarning = (args: unknown[]) =>
+  args.some(
+    (arg) =>
+      typeof arg === 'string' &&
+      arg.includes('Could not find Angular Material core theme'),
+  );
+
 // suppress the Angular Material theme warning that still fires in jsdom
 // even though we import a prebuilt theme; keep other errors visible.
 console.error = (...args: unknown[]) => {
-  if (
-    typeof args[0] === 'string' &&
-    args[0].includes('Could not find Angular Material core theme')
-  ) {
+  if (isMaterialThemeWarning(args)) {
     return;
   }
   return originalConsoleError(...args);
+};
+console.warn = (...args: unknown[]) => {
+  if (isMaterialThemeWarning(args)) {
+    return;
+  }
+  return originalConsoleWarn(...args);
 };
 /* eslint-enable no-console */
 

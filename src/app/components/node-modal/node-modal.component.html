@@ -7,13 +7,15 @@
       ? 'Add New Culture'
       : 'Edit Culture'
   }}
-  <span class="contaminated-label" *ngIf="isContaminated">(contaminated)</span>
+  @if (isContaminated) {
+  <span class="contaminated-label">(contaminated)</span>
+  }
 </h2>
 
 <mat-dialog-content>
-  <p class="parent-info" *ngIf="data.parentId">
-    Parent ID: {{ data.parentId }}
-  </p>
+  @if (data.parentId) {
+  <p class="parent-info">Parent ID: {{ data.parentId }}</p>
+  }
 
   <form [formGroup]="cultureForm" class="culture-form">
     <mat-form-field appearance="outline" class="full-width">
@@ -48,9 +50,11 @@
       <mat-form-field appearance="outline" class="half-width">
         <mat-label>Type</mat-label>
         <mat-select formControlName="type">
-          <mat-option *ngFor="let type of cultureTypes" [value]="type.value">
+          @for (type of cultureTypes; track type.value) {
+          <mat-option [value]="type.value">
             {{ type.label }}
           </mat-option>
+          }
         </mat-select>
       </mat-form-field>
 
@@ -68,28 +72,29 @@
     <mat-form-field appearance="outline" class="full-width">
       <mat-label>Strain Family</mat-label>
       <mat-select formControlName="strainPrefix">
-        <mat-option
-          *ngFor="let strain of strainOptions"
-          [value]="strain.prefix"
-        >
+        @for (strain of strainOptions; track strain.prefix) {
+        <mat-option [value]="strain.prefix">
           {{ strain.label }}
         </mat-option>
+        }
       </mat-select>
-      <mat-hint *ngIf="!isRootNode">Inherited from parent culture</mat-hint>
+      @if (!isRootNode) {
+      <mat-hint>Inherited from parent culture</mat-hint>
+      }
     </mat-form-field>
 
-    <mat-form-field
-      appearance="outline"
-      class="full-width"
-      *ngIf="cultureForm.contains('relationshipType')"
-    >
+    @if (cultureForm.contains('relationshipType')) {
+    <mat-form-field appearance="outline" class="full-width">
       <mat-label>Relationship type with the parent node</mat-label>
       <mat-select formControlName="relationshipType">
-        <mat-option *ngFor="let rel of relationshipTypes" [value]="rel">
+        @for (rel of relationshipTypes; track rel) {
+        <mat-option [value]="rel">
           {{ rel | titlecase | replace : '_' : ' ' }}
         </mat-option>
+        }
       </mat-select>
     </mat-form-field>
+    }
 
     <div class="form-row">
       <mat-form-field appearance="outline" class="half-width">
@@ -125,22 +130,13 @@
 
 <mat-dialog-actions align="end">
   <button mat-button (click)="onClose()">Close</button>
-  <button
-    mat-button
-    color="warn"
-    (click)="onDelete()"
-    *ngIf="!isNew && !data.parentId"
-  >
-    Delete
-  </button>
-  <button
-    mat-raised-button
-    color="primary"
-    (click)="onAddChild()"
-    *ngIf="!isNew && !data.parentId"
-  >
+  @if (!isNew && !data.parentId) {
+  <button mat-button color="warn" (click)="onDelete()">Delete</button>
+  } @if (!isNew && !data.parentId) {
+  <button mat-raised-button color="primary" (click)="onAddChild()">
     <mat-icon>add</mat-icon> Add Child
   </button>
+  }
   <button
     mat-raised-button
     color="primary"

@@ -1,5 +1,6 @@
 <!-- components/culture-detail/culture-detail.component.html -->
-<div class="detail-panel" *ngIf="selectedCulture; else noSelection">
+@if (selectedCulture) {
+<div class="detail-panel">
   <div class="detail-header">
     <button
       mat-icon-button
@@ -19,14 +20,17 @@
       <mat-icon>more_vert</mat-icon>
     </button>
     <mat-menu #menu="matMenu">
-      <button mat-menu-item (click)="archiveCulture()" *ngIf="!isArchived()">
+      @if (!isArchived()) {
+      <button mat-menu-item (click)="archiveCulture()">
         <mat-icon>archive</mat-icon>
         <span>Archive</span>
       </button>
-      <button mat-menu-item (click)="restoreCulture()" *ngIf="isArchived()">
+      } @if (isArchived()) {
+      <button mat-menu-item (click)="restoreCulture()">
         <mat-icon>unarchive</mat-icon>
         <span>Restore</span>
       </button>
+      }
       <mat-divider></mat-divider>
       <button mat-menu-item (click)="deleteCulture()" color="warn">
         <mat-icon>delete</mat-icon>
@@ -34,7 +38,6 @@
       </button>
     </mat-menu>
   </div>
-
   <div class="detail-content">
     <!-- Main Info Card -->
     <mat-card class="info-card" [class.archived]="isArchived()">
@@ -49,7 +52,9 @@
         <mat-card-title>{{ selectedCulture.label }}</mat-card-title>
         <mat-card-subtitle>
           {{ selectedCulture.type | titlecase }}
-          <span *ngIf="isArchived()" class="archived-badge">(Archived)</span>
+          @if (isArchived()) {
+          <span class="archived-badge">(Archived)</span>
+          }
         </mat-card-subtitle>
       </mat-card-header>
       <mat-card-content>
@@ -78,41 +83,42 @@
               selectedCulture.source || 'Unknown'
             }}</span>
           </div>
-          <div class="info-row" *ngIf="selectedCulture.metadata?.viability">
+          @if (selectedCulture.metadata?.viability) {
+          <div class="info-row">
             <span class="info-label">Viability:</span>
             <span class="info-value">{{ getViability() }}</span>
           </div>
+          }
         </div>
-
-        <div class="description-section" *ngIf="selectedCulture.description">
+        @if (selectedCulture.description) {
+        <div class="description-section">
           <h4>Description</h4>
           <p>{{ selectedCulture.description }}</p>
         </div>
-
-        <div class="notes-section" *ngIf="selectedCulture.notes">
+        } @if (selectedCulture.notes) {
+        <div class="notes-section">
           <h4>Notes</h4>
           <p>{{ selectedCulture.notes }}</p>
         </div>
+        }
       </mat-card-content>
     </mat-card>
-
     <!-- Ancestors Card -->
-    <mat-card class="lineage-card" *ngIf="ancestors.length > 0">
+    @if (ancestors.length > 0) {
+    <mat-card class="lineage-card">
       <mat-card-header>
         <mat-icon mat-card-avatar>arrow_upward</mat-icon>
         <mat-card-title>Lineage</mat-card-title>
       </mat-card-header>
       <mat-card-content>
         <div class="lineage-list">
-          <div
-            *ngFor="let ancestor of ancestors"
-            class="lineage-item"
-            (click)="selectCulture(ancestor.id)"
-          >
+          @for (ancestor of ancestors; track ancestor.id) {
+          <div class="lineage-item" (click)="selectCulture(ancestor.id)">
             <span class="lineage-label">{{ ancestor.label }}</span>
             <span class="lineage-type">({{ ancestor.type }})</span>
             <mat-icon class="lineage-arrow">arrow_forward</mat-icon>
           </div>
+          }
           <div class="lineage-item current">
             <span class="lineage-label">{{ selectedCulture.label }}</span>
             <span class="lineage-type">(current)</span>
@@ -120,9 +126,10 @@
         </div>
       </mat-card-content>
     </mat-card>
-
+    }
     <!-- Descendants Card -->
-    <mat-card class="descendants-card" *ngIf="descendants.length > 0">
+    @if (descendants.length > 0) {
+    <mat-card class="descendants-card">
       <mat-card-header>
         <mat-icon mat-card-avatar>arrow_downward</mat-icon>
         <mat-card-title>Descendants ({{ descendants.length }})</mat-card-title>
@@ -130,8 +137,8 @@
       <mat-card-content>
         <div class="descendants-list">
           <mat-chip-set>
+            @for (desc of descendants; track desc.id) {
             <mat-chip
-              *ngFor="let desc of descendants"
               (click)="selectCulture(desc.id)"
               [class]="'type-' + desc.type"
               matTooltip="{{ desc.type }}: {{
@@ -141,21 +148,20 @@
               {{ desc.label }}
               <span class="chip-type">{{ desc.type }}</span>
             </mat-chip>
+            }
           </mat-chip-set>
         </div>
       </mat-card-content>
     </mat-card>
-
+    }
     <!-- Empty State for No Descendants -->
-    <mat-card
-      class="empty-card"
-      *ngIf="descendants.length === 0 && selectedCulture"
-    >
+    @if (descendants.length === 0 && selectedCulture) {
+    <mat-card class="empty-card">
       <mat-card-content>
         <p>No descendants yet. Add a child culture to continue the line.</p>
       </mat-card-content>
     </mat-card>
-
+    }
     <!-- Action Buttons -->
     <div class="detail-actions">
       <button
@@ -177,11 +183,10 @@
     </div>
   </div>
 </div>
-
-<ng-template #noSelection>
-  <div class="no-selection">
-    <mat-icon class="no-selection-icon">account_tree</mat-icon>
-    <h3>No Culture Selected</h3>
-    <p>Click on a node in the graph to view its details</p>
-  </div>
-</ng-template>
+} @else {
+<div class="no-selection">
+  <mat-icon class="no-selection-icon">account_tree</mat-icon>
+  <h3>No Culture Selected</h3>
+  <p>Click on a node in the graph to view its details</p>
+</div>
+}

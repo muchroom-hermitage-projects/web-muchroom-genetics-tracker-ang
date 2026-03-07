@@ -27,3 +27,12 @@ and all new children created from it after marking its "contaminated" state shol
   - the app should load data from the one that is currently selected
   - add option to remove the saved state
   - add option to giva a name to an imported/exported state json
+- Add option to preserve the current nodes structure (store it with the data in the json object)
+- Add indicator to the UI, that shows (a warning bulb) that the structure no longer matches what is currently sored in the json
+- Add a buttons providing options to restore the strusture saved in json or to save the modified structure
+- It should be possible to create up to 5 different structure state saves:
+  - all are stored in the json
+  - in the UI there should be a dropdown with all the saved structures selectable
+  - if a save is still empty - is should be marked as "empty" in the dropdown
+  - when "save" button is clicked, it the currently selected save is replaced with the new one
+- Add buttons to zoom in/out the graph, and add indicator to the UI showing the current zoom level (e.g. 100%, 150%, etc.)
