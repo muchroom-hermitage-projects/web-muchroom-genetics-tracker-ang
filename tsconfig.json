@@ -16,10 +16,10 @@
     "experimentalDecorators": true,
     "moduleResolution": "bundler",
     "importHelpers": true,
-    "target": "es2020",
+    "target": "es2022",
     "module": "ESNext",
     "skipLibCheck": true,
-    "lib": ["es2020", "dom"],
+    "lib": ["es2022", "dom"],
     "useDefineForClassFields": false,
     "types": ["vitest/globals"]
   },
