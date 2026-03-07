@@ -2,16 +2,20 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CultureDetailComponent } from './culture-detail.component';
 import { MatDialog } from '@angular/material/dialog';
 import { CultureService } from '../../services/culture.service';
-import { of } from 'rxjs';
-import { NO_ERRORS_SCHEMA } from '@angular/core';
+import { NO_ERRORS_SCHEMA, signal } from '@angular/core';
 
 class MockCultureService {
-  getSelectedNodeId() {
-    return of(null);
+  private selectedNodeId = signal<string | null>(null);
+  private cultures = signal<any[]>([]);
+
+  getSelectedNodeIdSignal() {
+    return this.selectedNodeId.asReadonly();
   }
-  getCultures() {
-    return of([]);
+
+  getCulturesSignal() {
+    return this.cultures.asReadonly();
   }
+
   getAncestors() {
     return [];
   }

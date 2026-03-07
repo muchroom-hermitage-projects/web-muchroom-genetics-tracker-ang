@@ -126,9 +126,10 @@ describe('FilterPanelComponent', () => {
       fixture.detectChanges();
 
       tick(100);
+      fixture.detectChanges();
 
       expect(cultureService.getCultures).toHaveBeenCalled();
-      expect(component.strains).toEqual(['STR-1', 'STR-2']);
+      expect(component.strains()).toEqual(['STR-1', 'STR-2']);
     }));
 
     it('should call updateFilters when form changes', () => {
@@ -143,6 +144,7 @@ describe('FilterPanelComponent', () => {
       };
 
       component.filterForm.patchValue(testFilters);
+      fixture.detectChanges();
 
       expect(cultureService.updateFilters).toHaveBeenCalledWith(
         expect.objectContaining(testFilters),
@@ -159,8 +161,9 @@ describe('FilterPanelComponent', () => {
 
       // Wait for async operations
       await newFixture.whenStable();
+      newFixture.detectChanges();
 
-      expect(newComponent.strains).toEqual([]);
+      expect(newComponent.strains()).toEqual([]);
     });
   });
 
@@ -176,9 +179,11 @@ describe('FilterPanelComponent', () => {
         showClean: false,
         minViability: 50,
       });
+      fixture.detectChanges();
 
       // Reset
       component.resetFilters();
+      fixture.detectChanges();
 
       // Verify reset to defaults
       expect(component.filterForm.value).toEqual({
@@ -196,6 +201,7 @@ describe('FilterPanelComponent', () => {
       cultureService.updateFilters.mockClear();
 
       component.resetFilters();
+      fixture.detectChanges();
 
       expect(cultureService.updateFilters).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -228,26 +234,31 @@ describe('FilterPanelComponent', () => {
 
     it('should count strain filter', () => {
       component.filterForm.patchValue({ strain: 'STR-1' });
+      fixture.detectChanges();
       expect(component.getActiveFilterCount()).toBe(1);
     });
 
     it('should count type filter', () => {
       component.filterForm.patchValue({ type: CultureType.AGAR });
+      fixture.detectChanges();
       expect(component.getActiveFilterCount()).toBe(1);
     });
 
     it('should count filialGeneration filter', () => {
       component.filterForm.patchValue({ filialGeneration: 'F1' });
+      fixture.detectChanges();
       expect(component.getActiveFilterCount()).toBe(1);
     });
 
     it('should count minViability filter when > 0', () => {
       component.filterForm.patchValue({ minViability: 50 });
+      fixture.detectChanges();
       expect(component.getActiveFilterCount()).toBe(1);
     });
 
     it('should not count minViability when 0', () => {
       component.filterForm.patchValue({ minViability: 0 });
+      fixture.detectChanges();
       expect(component.getActiveFilterCount()).toBe(0);
     });
 
@@ -257,6 +268,7 @@ describe('FilterPanelComponent', () => {
         showContaminated: false,
         showClean: false,
       });
+      fixture.detectChanges();
       expect(component.getActiveFilterCount()).toBe(0);
     });
 
@@ -267,6 +279,7 @@ describe('FilterPanelComponent', () => {
         filialGeneration: 'F1',
         minViability: 75,
       });
+      fixture.detectChanges();
       expect(component.getActiveFilterCount()).toBe(4);
     });
 
@@ -280,6 +293,7 @@ describe('FilterPanelComponent', () => {
         showContaminated: false,
         showClean: true,
       });
+      fixture.detectChanges();
       expect(component.getActiveFilterCount()).toBe(4);
     });
   });
@@ -287,21 +301,25 @@ describe('FilterPanelComponent', () => {
   describe('Form Validation', () => {
     it('should accept valid strain values', () => {
       component.filterForm.patchValue({ strain: 'STR-1' });
+      fixture.detectChanges();
       expect(component.filterForm.get('strain')?.valid).toBe(true);
     });
 
     it('should accept empty strain values', () => {
       component.filterForm.patchValue({ strain: '' });
+      fixture.detectChanges();
       expect(component.filterForm.get('strain')?.valid).toBe(true);
     });
 
     it('should accept valid culture type values', () => {
       component.filterForm.patchValue({ type: CultureType.AGAR });
+      fixture.detectChanges();
       expect(component.filterForm.get('type')?.valid).toBe(true);
     });
 
     it('should accept numeric minViability values', () => {
       component.filterForm.patchValue({ minViability: 50 });
+      fixture.detectChanges();
       expect(component.filterForm.get('minViability')?.valid).toBe(true);
     });
 
@@ -311,6 +329,7 @@ describe('FilterPanelComponent', () => {
         showContaminated: false,
         showClean: true,
       });
+      fixture.detectChanges();
       expect(component.filterForm.get('showArchived')?.valid).toBe(true);
       expect(component.filterForm.get('showContaminated')?.valid).toBe(true);
       expect(component.filterForm.get('showClean')?.valid).toBe(true);

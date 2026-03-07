@@ -36,3 +36,4 @@ and all new children created from it after marking its "contaminated" state shol
   - if a save is still empty - is should be marked as "empty" in the dropdown
   - when "save" button is clicked, it the currently selected save is replaced with the new one
 - Add buttons to zoom in/out the graph, and add indicator to the UI showing the current zoom level (e.g. 100%, 150%, etc.)
+- Refactor navbar menu (currently in app.component), to a separate component

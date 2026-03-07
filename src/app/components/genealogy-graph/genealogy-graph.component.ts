@@ -1,13 +1,16 @@
 // components/genealogy-graph/genealogy-graph.component.ts
 import {
   Component,
-  OnInit,
   AfterViewInit,
   ViewChild,
   ElementRef,
   OnDestroy,
+  computed,
+  effect,
+  inject,
+  signal,
 } from '@angular/core';
-import { Subscription } from 'rxjs';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { MatDialog } from '@angular/material/dialog';
 import cytoscape from 'cytoscape';
 import dagre from 'cytoscape-dagre';
@@ -27,54 +30,52 @@ if (cytoscape && typeof cytoscape.use === 'function') {
   templateUrl: './genealogy-graph.component.html',
   styleUrls: ['./genealogy-graph.component.scss'],
 })
-export class GenealogyGraphComponent
-  implements OnInit, AfterViewInit, OnDestroy
-{
+export class GenealogyGraphComponent implements AfterViewInit, OnDestroy {
+  private readonly cultureService = inject(CultureService);
+  private readonly graphBuilder = inject(GraphBuilderService);
+  private readonly dialog = inject(MatDialog);
+
+  private readonly filteredCulturesSignal = toSignal(
+    this.cultureService.getFilteredCultures(),
+    { initialValue: [] as Culture[] },
+  );
+  private readonly relationshipsSignal = toSignal(
+    this.cultureService.getRelationships(),
+    { initialValue: [] as Relationship[] },
+  );
+  private readonly selectedNodeIdSignal = toSignal(
+    this.cultureService.getSelectedNodeId(),
+    { initialValue: null },
+  );
+
   @ViewChild('cyContainer') cyContainer!: ElementRef;
 
   private cy!: cytoscape.Core;
   cultures: Culture[] = [];
   private relationships: Relationship[] = [];
-  private subscriptions: Subscription[] = [];
-  subtreeMode: boolean = true;
-
-  get subtreeModeLabel(): string {
-    return this.subtreeMode ? 'Subtree Mode' : 'Cascade Drag';
-  }
-
-  get subtreeModeTooltip(): string {
-    return this.subtreeMode
+  readonly subtreeMode = signal(true);
+  readonly subtreeModeLabel = computed(() =>
+    this.subtreeMode() ? 'Subtree Mode' : 'Cascade Drag',
+  );
+  readonly subtreeModeTooltip = computed(() => {
+    return this.subtreeMode()
       ? 'Subtree Mode: Dragging a parent node moves all its descendants while maintaining relative positions.'
       : 'Cascade Drag: Dragging a node moves only that specific node without affecting its children.';
-  }
+  });
 
-  constructor(
-    private cultureService: CultureService,
-    private graphBuilder: GraphBuilderService,
-    private dialog: MatDialog,
-  ) {}
-
-  ngOnInit(): void {
-    // Subscribe to data changes
-    this.subscriptions.push(
-      this.cultureService.getFilteredCultures().subscribe((cultures) => {
-        this.cultures = cultures;
-        this.refreshGraph();
-      }),
-    );
-
-    this.subscriptions.push(
-      this.cultureService.getRelationships().subscribe((relationships) => {
-        this.relationships = relationships;
-        this.refreshGraph();
-      }),
-    );
-
-    this.subscriptions.push(
-      this.cultureService.getSelectedNodeId().subscribe((nodeId) => {
-        this.highlightNode(nodeId);
-      }),
-    );
+  constructor() {
+    effect(() => {
+      this.cultures = this.filteredCulturesSignal();
+      this.refreshGraph();
+    });
+    effect(() => {
+      this.relationships = this.relationshipsSignal();
+      this.refreshGraph();
+    });
+    effect(() => {
+      const selectedNodeId = this.selectedNodeIdSignal();
+      this.highlightNode(selectedNodeId);
+    });
   }
 
   ngAfterViewInit(): void {
@@ -82,7 +83,6 @@ export class GenealogyGraphComponent
   }
 
   ngOnDestroy(): void {
-    this.subscriptions.forEach((sub) => sub.unsubscribe());
     if (this.cy) {
       this.cy.destroy();
     }
@@ -192,7 +192,7 @@ export class GenealogyGraphComponent
       if (draggedNode.id() !== draggedNodeId) return;
 
       // Only apply to descendants if subtree mode is enabled
-      if (!this.subtreeMode) return;
+      if (!this.subtreeMode()) return;
 
       // Calculate delta from original position
       const originalPos = dragStartPositions.get(draggedNode.id());

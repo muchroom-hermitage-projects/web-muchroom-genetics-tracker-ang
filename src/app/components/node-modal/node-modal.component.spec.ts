@@ -13,7 +13,7 @@ import {
   CultureType,
   RelationshipType,
 } from '../../models/culture.model';
-import { NO_ERRORS_SCHEMA, Pipe, PipeTransform } from '@angular/core';
+import { NO_ERRORS_SCHEMA, Pipe, PipeTransform, signal } from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatInputModule } from '@angular/material/input';
@@ -53,6 +53,10 @@ const mockRelationship = {
 };
 
 class MockCultureService {
+  private cultures = signal([
+    { id: 'p1', strain: 'STR-1', strainSegment: 1, metadata: {} },
+  ]);
+
   getParent(id: string) {
     return id === 'c1' ? { id: 'p1' } : null;
   }
@@ -74,16 +78,8 @@ class MockCultureService {
   updateRelationship = vi.fn();
   addCulture = vi.fn().mockReturnValue({ id: 'new1' });
   addRelationship = vi.fn();
-  getCultures() {
-    const subscription = {
-      unsubscribe: vi.fn(),
-    };
-    return {
-      subscribe: (fn: any) => {
-        fn([{ id: 'p1', strain: 'STR-1', strainSegment: 1, metadata: {} }]);
-        return subscription;
-      },
-    };
+  getCulturesSignal() {
+    return this.cultures.asReadonly();
   }
 }
 

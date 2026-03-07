@@ -7,7 +7,7 @@
       <mat-label>Strain</mat-label>
       <mat-select formControlName="strain">
         <mat-option value="">All Strains</mat-option>
-        @for (strain of strains; track strain) {
+        @for (strain of strains(); track strain) {
         <mat-option [value]="strain">
           {{ strain }}
         </mat-option>
@@ -60,12 +60,12 @@
         mat-button
         color="warn"
         (click)="resetFilters()"
-        [disabled]="getActiveFilterCount() === 0"
+        [disabled]="activeFilterCount() === 0"
       >
         Reset Filters
       </button>
-      @if (getActiveFilterCount() > 0) {
-      <span class="filter-count"> {{ getActiveFilterCount() }} active </span>
+      @if (activeFilterCount() > 0) {
+      <span class="filter-count"> {{ activeFilterCount() }} active </span>
       }
     </div>
   </form>

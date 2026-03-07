@@ -198,14 +198,11 @@ export class NodeModalComponent {
   }
 
   private getParent(parentId: string): Culture | null {
-    let parent: Culture | null = null;
-    this.cultureService
-      .getCultures()
-      .subscribe((cultures) => {
-        parent = cultures.find((c) => c.id === parentId) || null;
-      })
-      .unsubscribe();
-    return parent;
+    return (
+      this.cultureService
+        .getCulturesSignal()()
+        .find((culture) => culture.id === parentId) || null
+    );
   }
 
   onAddChild(): void {
