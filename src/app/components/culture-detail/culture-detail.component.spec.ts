@@ -4,7 +4,11 @@ import { MatDialog } from '@angular/material/dialog';
 import { CultureService } from '../../services/culture.service';
 import { NO_ERRORS_SCHEMA, signal } from '@angular/core';
 import { of } from 'rxjs';
-import { Culture, CultureType } from '../../models/culture.model';
+import { Culture } from '../../models/culture.model';
+import {
+  CULTURE_DETAIL_CHILD_CULTURE,
+  CULTURE_DETAIL_ROOT_CULTURE,
+} from '../../../testing/mocks';
 
 class MockCultureService {
   readonly setSelectedNode = vi.fn();
@@ -63,25 +67,8 @@ describe('CultureDetailComponent', () => {
   let fixture: ComponentFixture<CultureDetailComponent>;
   let cultureService: MockCultureService;
   let dialogSpy: DialogSpy;
-
-  const rootCulture: Culture = {
-    id: 'node-1',
-    label: 'Root',
-    type: CultureType.AGAR,
-    strain: 'STR-1',
-    strainSegment: 1,
-    filialGeneration: 'F0',
-    description: 'root',
-    dateCreated: new Date('2025-01-01'),
-    metadata: { isArchived: false, viability: 92 },
-  };
-
-  const childCulture: Culture = {
-    ...rootCulture,
-    id: 'node-2',
-    label: 'Child',
-    filialGeneration: 'F1',
-  };
+  const rootCulture: Culture = CULTURE_DETAIL_ROOT_CULTURE;
+  const childCulture: Culture = CULTURE_DETAIL_CHILD_CULTURE;
 
   beforeEach(async () => {
     dialogSpy = new DialogSpy();

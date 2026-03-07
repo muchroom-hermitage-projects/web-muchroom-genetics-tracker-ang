@@ -17,6 +17,7 @@ import { CultureService } from './services/culture.service';
 import { NodeModalComponent } from './components/node-modal/node-modal.component';
 import { AboutModalComponent } from './components/about-modal/about-modal.component';
 import { CultureType } from './models/culture.model';
+import { APP_ADD_ROOT_MODAL_RESULT, APP_EXPORT_JSON } from '../testing/mocks';
 
 const matDialogMock = {
   open: vi.fn().mockReturnValue({
@@ -28,7 +29,7 @@ const snackBarMock = {
 };
 const cultureServiceMock = {
   addCulture: vi.fn(),
-  exportDataAsJson: vi.fn().mockReturnValue('{"test":"data"}'),
+  exportDataAsJson: vi.fn().mockReturnValue(APP_EXPORT_JSON),
   importDataFromJson: vi.fn(),
 };
 
@@ -120,20 +121,14 @@ describe('AppComponent', () => {
     it('should add culture when dialog returns result', () => {
       component = fixture.componentInstance;
 
-      const mockResult = {
-        updates: {
-          label: 'Test Culture',
-          type: CultureType.SPORE,
-          strain: 'STR-1',
-        },
-      };
-
-      matDialogMock.open.mockReturnValue({ afterClosed: () => of(mockResult) });
+      matDialogMock.open.mockReturnValue({
+        afterClosed: () => of(APP_ADD_ROOT_MODAL_RESULT),
+      });
 
       component.addRootCulture();
 
       expect(cultureServiceMock.addCulture).toHaveBeenCalledWith(
-        mockResult.updates,
+        APP_ADD_ROOT_MODAL_RESULT.updates,
       );
     });
 

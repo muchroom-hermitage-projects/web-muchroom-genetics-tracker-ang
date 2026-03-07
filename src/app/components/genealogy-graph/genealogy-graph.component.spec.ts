@@ -10,13 +10,13 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { FormsModule } from '@angular/forms';
 import { NodeModalComponent } from '../node-modal/node-modal.component';
-import {
-  Culture,
-  Relationship,
-  RelationshipType,
-} from '../../models/culture.model';
+import { Culture, Relationship } from '../../models/culture.model';
 import { BehaviorSubject, Observable, of } from 'rxjs';
-import { SAMPLE_CULTURE } from '../../../testing/mocks';
+import {
+  GENEALOGY_VISIBLE_CULTURES,
+  GENEALOGY_VISIBLE_RELATIONSHIPS,
+  SAMPLE_CULTURE,
+} from '../../../testing/mocks';
 
 class MockCultureService {
   private readonly filteredCultures$ = new BehaviorSubject<Culture[]>([]);
@@ -121,30 +121,11 @@ describe('GenealogyGraphComponent', () => {
   });
 
   it('filters visible relationships based on current graph state', () => {
-    const cultures: Culture[] = [
-      { ...sampleCulture, id: 'a' },
-      { ...sampleCulture, id: 'b' },
-    ];
-    const relationships: Relationship[] = [
-      {
-        id: 'r1',
-        sourceId: 'a',
-        targetId: 'b',
-        type: RelationshipType.TRANSFER,
-      },
-      {
-        id: 'r2',
-        sourceId: 'b',
-        targetId: 'c',
-        type: RelationshipType.TRANSFER,
-      },
-    ];
-
-    (component as any).cultures = cultures;
-    (component as any).relationships = relationships;
+    (component as any).cultures = GENEALOGY_VISIBLE_CULTURES;
+    (component as any).relationships = GENEALOGY_VISIBLE_RELATIONSHIPS;
 
     const visible = (component as any).getVisibleRelationships();
-    expect(visible).toEqual([relationships[0]]);
+    expect(visible).toEqual([GENEALOGY_VISIBLE_RELATIONSHIPS[0]]);
   });
 
   it('updates subtree mode label and tooltip when signal changes', () => {

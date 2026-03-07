@@ -19,6 +19,7 @@ import { CultureType } from '../../models/culture.model';
 import { Mocked } from 'vitest';
 import {
   DEFAULT_FILTERS,
+  FILTER_PANEL_ACTIVE_FILTERS,
   FILTER_PANEL_MOCK_CULTURES,
 } from '../../../testing/mocks';
 
@@ -116,21 +117,11 @@ describe('FilterPanelComponent', () => {
     }));
 
     it('should call updateFilters when form changes', () => {
-      const testFilters = {
-        strain: 'STR-1',
-        type: CultureType.AGAR,
-        filialGeneration: 'F1',
-        showArchived: true,
-        showContaminated: false,
-        showClean: true,
-        minViability: 50,
-      };
-
-      component.filterForm.patchValue(testFilters);
+      component.filterForm.patchValue(FILTER_PANEL_ACTIVE_FILTERS);
       fixture.detectChanges();
 
       expect(cultureService.updateFilters).toHaveBeenCalledWith(
-        expect.objectContaining(testFilters),
+        expect.objectContaining(FILTER_PANEL_ACTIVE_FILTERS),
       );
     });
 
