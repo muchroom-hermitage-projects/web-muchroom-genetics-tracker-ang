@@ -10,6 +10,21 @@ import {
 } from '@angular/platform-browser-dynamic/testing';
 import { afterEach, vi } from 'vitest';
 
+/* eslint-disable no-console */
+const originalConsoleError = console.error;
+// suppress the Angular Material theme warning that still fires in jsdom
+// even though we import a prebuilt theme; keep other errors visible.
+console.error = (...args: unknown[]) => {
+  if (
+    typeof args[0] === 'string' &&
+    args[0].includes('Could not find Angular Material core theme')
+  ) {
+    return;
+  }
+  return originalConsoleError(...args);
+};
+/* eslint-enable no-console */
+
 if (!getTestBed().platform) {
   getTestBed().initTestEnvironment(
     BrowserDynamicTestingModule,
