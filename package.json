@@ -1,12 +1,13 @@
 {
   "name": "mycology-genetics-tracker",
   "version": "0.1.0",
+  "type": "module",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "vitest --config vitest.config.mts",
+    "test": "vitest --config vitest.config.ts",
     "test:coverage": "vitest run --coverage",
     "lint": "ng lint",
     "format": "prettier --write \"src/**/*.{ts,html,scss,css,json}\" && eslint \"src/**/*.ts\" --fix",
