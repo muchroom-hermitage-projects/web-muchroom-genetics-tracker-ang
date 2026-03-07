@@ -22,6 +22,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { Mocked } from 'vitest';
 
 // Mock Pipe
 @Pipe({ name: 'replace' })
@@ -70,12 +71,12 @@ class MockCultureService {
   suggestChildStrainCode() {
     return { strain: 'STR-1', segment: 1 };
   }
-  updateRelationship = jasmine.createSpy('updateRelationship');
-  addCulture = jasmine.createSpy('addCulture').and.returnValue({ id: 'new1' });
-  addRelationship = jasmine.createSpy('addRelationship');
+  updateRelationship = vi.fn();
+  addCulture = vi.fn().mockReturnValue({ id: 'new1' });
+  addRelationship = vi.fn();
   getCultures() {
     const subscription = {
-      unsubscribe: jasmine.createSpy('unsubscribe'),
+      unsubscribe: vi.fn(),
     };
     return {
       subscribe: (fn: any) => {
@@ -90,10 +91,12 @@ describe('NodeModalComponent', () => {
   let component: NodeModalComponent;
   let fixture: ComponentFixture<NodeModalComponent>;
   let cultureService: MockCultureService;
-  let dialogRefSpy: jasmine.SpyObj<MatDialogRef<NodeModalComponent>>;
+  let dialogRefSpy: Mocked<MatDialogRef<NodeModalComponent>>;
 
   beforeEach(async () => {
-    dialogRefSpy = jasmine.createSpyObj('MatDialogRef', ['close']);
+    dialogRefSpy = {
+      close: vi.fn(),
+    } as Mocked<MatDialogRef<NodeModalComponent>>;
 
     await TestBed.configureTestingModule({
       declarations: [NodeModalComponent, MockReplacePipe],
@@ -135,7 +138,7 @@ describe('NodeModalComponent', () => {
   });
 
   it('should add relationshipType control if parent relationship exists', () => {
-    expect(component.cultureForm.contains('relationshipType')).toBeTrue();
+    expect(component.cultureForm.contains('relationshipType')).toBe(true);
     expect(component.cultureForm.get('relationshipType')?.value).toBe(
       RelationshipType.TRANSFER,
     );
@@ -152,8 +155,8 @@ describe('NodeModalComponent', () => {
   });
 
   it('should disable strainPrefix control for non-root nodes', () => {
-    expect(component.isRootNode).toBeFalse();
-    expect(component.cultureForm.get('strainPrefix')?.disabled).toBeTrue();
+    expect(component.isRootNode).toBe(false);
+    expect(component.cultureForm.get('strainPrefix')?.disabled).toBe(true);
   });
 
   it('should enable strainPrefix control for root nodes', () => {
@@ -166,8 +169,8 @@ describe('NodeModalComponent', () => {
       { culture: rootCulture, isNew: false },
     );
 
-    expect(rootComponent.isRootNode).toBeTrue();
-    expect(rootComponent.cultureForm.get('strainPrefix')?.disabled).toBeFalse();
+    expect(rootComponent.isRootNode).toBe(true);
+    expect(rootComponent.cultureForm.get('strainPrefix')?.disabled).toBe(false);
   });
 
   it('should enable strainPrefix control for new nodes', () => {
@@ -179,8 +182,8 @@ describe('NodeModalComponent', () => {
       { culture: mockCulture, isNew: true },
     );
 
-    expect(newComponent.isRootNode).toBeTrue();
-    expect(newComponent.cultureForm.get('strainPrefix')?.disabled).toBeFalse();
+    expect(newComponent.isRootNode).toBe(true);
+    expect(newComponent.cultureForm.get('strainPrefix')?.disabled).toBe(false);
   });
 
   describe('Add Child Mode', () => {
@@ -193,13 +196,13 @@ describe('NodeModalComponent', () => {
         { parentId: 'p1' },
       );
 
-      expect(childComponent.isRootNode).toBeFalse();
-      expect(
-        childComponent.cultureForm.contains('relationshipType'),
-      ).toBeTrue();
-      expect(
-        childComponent.cultureForm.get('strainPrefix')?.disabled,
-      ).toBeTrue();
+      expect(childComponent.isRootNode).toBe(false);
+      expect(childComponent.cultureForm.contains('relationshipType')).toBe(
+        true,
+      );
+      expect(childComponent.cultureForm.get('strainPrefix')?.disabled).toBe(
+        true,
+      );
     });
 
     it('should create new culture and relationship in add-child mode', () => {

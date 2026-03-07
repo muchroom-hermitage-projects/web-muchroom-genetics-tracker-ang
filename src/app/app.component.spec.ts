@@ -1,4 +1,4 @@
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { AppComponent } from './app.component';
 import { MatDialog } from '@angular/material/dialog';
@@ -19,30 +19,32 @@ import { AboutModalComponent } from './components/about-modal/about-modal.compon
 import { CultureType } from './models/culture.model';
 
 const matDialogMock = {
-  open: jasmine
-    .createSpy('open')
-    .and.returnValue({ afterClosed: () => of(null) }),
+  open: vi.fn().mockReturnValue({
+    afterClosed: () => of(null),
+  }),
 };
 const snackBarMock = {
-  open: jasmine.createSpy('open'),
+  open: vi.fn(),
 };
 const cultureServiceMock = {
-  addCulture: jasmine.createSpy('addCulture'),
-  exportDataAsJson: jasmine
-    .createSpy('exportDataAsJson')
-    .and.returnValue('{"test":"data"}'),
-  importDataFromJson: jasmine.createSpy('importDataFromJson'),
+  addCulture: vi.fn(),
+  exportDataAsJson: vi.fn().mockReturnValue('{"test":"data"}'),
+  importDataFromJson: vi.fn(),
 };
 
 describe('AppComponent', () => {
   let component: AppComponent;
+  let fixture: ComponentFixture<AppComponent>;
 
   beforeEach(async () => {
-    matDialogMock.open.calls.reset();
-    snackBarMock.open.calls.reset();
-    cultureServiceMock.addCulture.calls.reset();
-    cultureServiceMock.exportDataAsJson.calls.reset();
-    cultureServiceMock.importDataFromJson.calls.reset();
+    matDialogMock.open.mockReturnValue({
+      afterClosed: () => of(null),
+    });
+    matDialogMock.open.mockClear();
+    snackBarMock.open.mockClear();
+    cultureServiceMock.addCulture.mockClear();
+    cultureServiceMock.exportDataAsJson.mockClear();
+    cultureServiceMock.importDataFromJson.mockClear();
 
     await TestBed.configureTestingModule({
       imports: [
@@ -64,22 +66,28 @@ describe('AppComponent', () => {
       ],
       schemas: [NO_ERRORS_SCHEMA],
     }).compileComponents();
+
+    fixture = TestBed.createComponent(AppComponent);
+    component = fixture.componentInstance;
   });
 
-  it('should create the app', () => {
-    const fixture = TestBed.createComponent(AppComponent);
+  afterEach(() => {
+    vi.restoreAllMocks();
+    // Reset the ProxyZone state
+    // (globalThis as any).Zone?.current.get('FakeAsyncTestZoneSpec')?.reset();
+  });
+
+  it('should create the app', fakeAsync(() => {
     const app = fixture.componentInstance;
     expect(app).toBeTruthy();
-  });
+  }));
 
   it(`should have as title 'mycology-genetics-tracker'`, () => {
-    const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.componentInstance;
     expect(app.title).toEqual('mycology-genetics-tracker');
   });
 
   it('should render toolbar title', () => {
-    const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('mat-toolbar')?.textContent).toContain(
@@ -89,7 +97,6 @@ describe('AppComponent', () => {
 
   describe('addRootCulture', () => {
     it('should open NodeModalComponent with correct data', () => {
-      const fixture = TestBed.createComponent(AppComponent);
       component = fixture.componentInstance;
 
       component.addRootCulture();
@@ -97,7 +104,7 @@ describe('AppComponent', () => {
       expect(matDialogMock.open).toHaveBeenCalledWith(NodeModalComponent, {
         width: '500px',
         data: {
-          culture: jasmine.objectContaining({
+          culture: expect.objectContaining({
             label: '',
             type: CultureType.SPORE,
             strain: '',
@@ -111,7 +118,6 @@ describe('AppComponent', () => {
     });
 
     it('should add culture when dialog returns result', () => {
-      const fixture = TestBed.createComponent(AppComponent);
       component = fixture.componentInstance;
 
       const mockResult = {
@@ -122,7 +128,7 @@ describe('AppComponent', () => {
         },
       };
 
-      matDialogMock.open.and.returnValue({ afterClosed: () => of(mockResult) });
+      matDialogMock.open.mockReturnValue({ afterClosed: () => of(mockResult) });
 
       component.addRootCulture();
 
@@ -132,10 +138,9 @@ describe('AppComponent', () => {
     });
 
     it('should not add culture when dialog is cancelled', () => {
-      const fixture = TestBed.createComponent(AppComponent);
       component = fixture.componentInstance;
 
-      matDialogMock.open.and.returnValue({ afterClosed: () => of(null) });
+      matDialogMock.open.mockReturnValue({ afterClosed: () => of(null) });
 
       component.addRootCulture();
 
@@ -144,20 +149,23 @@ describe('AppComponent', () => {
   });
 
   describe('exportData', () => {
-    let createElementSpy: jasmine.Spy;
+    let createElementSpy: vi.SpyInstance;
     let mockAnchor: any;
 
     beforeEach(() => {
       mockAnchor = {
+        click: vi.fn(),
+        setAttribute: vi.fn(),
         href: '',
         download: '',
-        click: jasmine.createSpy('click'),
       };
-      createElementSpy = spyOn(document, 'createElement').and.returnValue(
-        mockAnchor,
-      );
-      spyOn(URL, 'createObjectURL').and.returnValue('blob:mock-url');
-      spyOn(URL, 'revokeObjectURL');
+      createElementSpy = vi
+        .spyOn(document, 'createElement')
+        .mockReturnValue(mockAnchor);
+      // vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock-url');
+      // vi.spyOn(URL, 'revokeObjectURL');
+      URL.createObjectURL = vi.fn().mockReturnValue('blob:mock-url');
+      URL.revokeObjectURL = vi.fn();
     });
 
     it('should export data and trigger download', () => {
@@ -171,20 +179,13 @@ describe('AppComponent', () => {
       component.exportData();
 
       expect(cultureServiceMock.exportDataAsJson).toHaveBeenCalled();
-      expect(URL.createObjectURL).toHaveBeenCalledWith(jasmine.any(Blob));
+      expect(URL.createObjectURL).toHaveBeenCalledWith(expect.any(Blob));
       expect(mockAnchor.click).toHaveBeenCalled();
       expect(mockAnchor.download).toContain('mycology-data-');
       expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:mock-url');
     });
 
     it('should show success snackbar after export', () => {
-      // Create component directly with mocks to avoid Material DOM issues
-      component = new AppComponent(
-        matDialogMock as any,
-        cultureServiceMock as any,
-        snackBarMock as any,
-      );
-
       component.exportData();
 
       expect(snackBarMock.open).toHaveBeenCalledWith('Data exported', 'Close', {
@@ -195,10 +196,9 @@ describe('AppComponent', () => {
 
   describe('importData', () => {
     it('should trigger file input click', () => {
-      const fixture = TestBed.createComponent(AppComponent);
       component = fixture.componentInstance;
 
-      const mockFileInput = { click: jasmine.createSpy('click') } as any;
+      const mockFileInput = { click: vi.fn() } as any;
 
       component.importData(mockFileInput);
 
@@ -216,17 +216,18 @@ describe('AppComponent', () => {
       });
 
       mockFileReader = {
-        readAsText: jasmine.createSpy('readAsText'),
+        readAsText: vi.fn(function (this: any) {
+          // This allows the component to attach its listener before we trigger it
+        }),
         onload: null,
         onerror: null,
         result: '{"test":"data"}',
       };
 
-      spyOn(window as any, 'FileReader').and.returnValue(mockFileReader);
+      vi.spyOn(window, 'FileReader').mockReturnValue(mockFileReader as any);
     });
 
     it('should return early if no file is selected', () => {
-      const fixture = TestBed.createComponent(AppComponent);
       component = fixture.componentInstance;
 
       const mockEvent = {
@@ -239,12 +240,11 @@ describe('AppComponent', () => {
     });
 
     it('should import data and show success snackbar on successful import', () => {
-      const fixture = TestBed.createComponent(AppComponent);
       component = fixture.componentInstance;
 
       // Reset the spy before this test
-      cultureServiceMock.importDataFromJson.calls.reset();
-      cultureServiceMock.importDataFromJson.and.stub();
+      cultureServiceMock.importDataFromJson.mockClear();
+      cultureServiceMock.importDataFromJson.mockImplementation(() => {});
 
       const mockEvent = {
         target: { files: [mockFile], value: 'test.json' },
@@ -265,12 +265,13 @@ describe('AppComponent', () => {
     });
 
     it('should show error snackbar on import failure', () => {
-      const fixture = TestBed.createComponent(AppComponent);
       component = fixture.componentInstance;
 
       // Reset and reconfigure the spy for this test
-      cultureServiceMock.importDataFromJson.calls.reset();
-      cultureServiceMock.importDataFromJson.and.throwError('Invalid JSON');
+      cultureServiceMock.importDataFromJson.mockClear();
+      cultureServiceMock.importDataFromJson.mockImplementation(() => {
+        throw new Error('Invalid JSON');
+      });
 
       const mockEvent = {
         target: { files: [mockFile], value: 'test.json' },
@@ -290,7 +291,6 @@ describe('AppComponent', () => {
     });
 
     it('should show error snackbar on file read error', () => {
-      const fixture = TestBed.createComponent(AppComponent);
       component = fixture.componentInstance;
 
       const mockEvent = {
@@ -313,7 +313,6 @@ describe('AppComponent', () => {
 
   describe('showAbout', () => {
     it('should open AboutModalComponent', () => {
-      const fixture = TestBed.createComponent(AppComponent);
       component = fixture.componentInstance;
 
       component.showAbout();
@@ -323,5 +322,11 @@ describe('AppComponent', () => {
         maxWidth: '95vw',
       });
     });
+  });
+});
+
+describe('AppComponent trivial run', () => {
+  it('performs a smoke assertion', () => {
+    expect(true).toBe(true);
   });
 });

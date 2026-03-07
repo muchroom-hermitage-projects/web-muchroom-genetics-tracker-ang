@@ -1,4 +1,9 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import {
+  ComponentFixture,
+  fakeAsync,
+  TestBed,
+  tick,
+} from '@angular/core/testing';
 import { FilterPanelComponent } from './filter-panel.component';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -10,6 +15,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { CultureService } from '../../services/culture.service';
 import { of } from 'rxjs';
 import { CultureType } from '../../models/culture.model';
+import { Mocked } from 'vitest';
 
 const mockCultures = [
   {
@@ -42,20 +48,20 @@ const mockCultures = [
 ];
 
 const mockCultureService = {
-  getCultures: jasmine
-    .createSpy('getCultures')
-    .and.returnValue(of(mockCultures)),
-  updateFilters: jasmine.createSpy('updateFilters'),
+  getCultures: vi.fn().mockReturnValue(of(mockCultures)),
+  updateFilters: vi.fn(),
 };
 
 describe('FilterPanelComponent', () => {
   let component: FilterPanelComponent;
   let fixture: ComponentFixture<FilterPanelComponent>;
-  let cultureService: jasmine.SpyObj<CultureService>;
+  let cultureService: Mocked<CultureService>;
 
   beforeEach(async () => {
-    mockCultureService.getCultures.calls.reset();
-    mockCultureService.updateFilters.calls.reset();
+    mockCultureService.getCultures
+      .mockClear()
+      .mockReturnValue(of(mockCultures));
+    mockCultureService.updateFilters.mockClear();
 
     await TestBed.configureTestingModule({
       declarations: [FilterPanelComponent],
@@ -73,9 +79,7 @@ describe('FilterPanelComponent', () => {
 
     fixture = TestBed.createComponent(FilterPanelComponent);
     component = fixture.componentInstance;
-    cultureService = TestBed.inject(
-      CultureService,
-    ) as jasmine.SpyObj<CultureService>;
+    cultureService = TestBed.inject(CultureService) as Mocked<CultureService>;
     fixture.detectChanges();
   });
 
@@ -97,35 +101,35 @@ describe('FilterPanelComponent', () => {
     });
 
     it('should have all required form controls', () => {
-      expect(component.filterForm.contains('strain')).toBeTrue();
-      expect(component.filterForm.contains('type')).toBeTrue();
-      expect(component.filterForm.contains('filialGeneration')).toBeTrue();
-      expect(component.filterForm.contains('showArchived')).toBeTrue();
-      expect(component.filterForm.contains('showContaminated')).toBeTrue();
-      expect(component.filterForm.contains('showClean')).toBeTrue();
-      expect(component.filterForm.contains('minViability')).toBeTrue();
+      expect(component.filterForm.contains('strain')).toBe(true);
+      expect(component.filterForm.contains('type')).toBe(true);
+      expect(component.filterForm.contains('filialGeneration')).toBe(true);
+      expect(component.filterForm.contains('showArchived')).toBe(true);
+      expect(component.filterForm.contains('showContaminated')).toBe(true);
+      expect(component.filterForm.contains('showClean')).toBe(true);
+      expect(component.filterForm.contains('minViability')).toBe(true);
     });
 
     it('should populate culture types from model', () => {
       expect(component.cultureTypes.length).toBeGreaterThan(0);
       expect(component.cultureTypes[0]).toEqual(
-        jasmine.objectContaining({
-          value: jasmine.any(String),
-          label: jasmine.any(String),
+        expect.objectContaining({
+          value: expect.any(String),
+          label: expect.any(String),
         }),
       );
     });
   });
 
   describe('ngOnInit', () => {
-    it('should load unique strains from cultures', (done) => {
-      // Wait for async operations to complete
-      setTimeout(() => {
-        expect(cultureService.getCultures).toHaveBeenCalled();
-        expect(component.strains).toEqual(['STR-1', 'STR-2']);
-        done();
-      }, 100);
-    });
+    it('should load unique strains from cultures', fakeAsync(() => {
+      fixture.detectChanges();
+
+      tick(100);
+
+      expect(cultureService.getCultures).toHaveBeenCalled();
+      expect(component.strains).toEqual(['STR-1', 'STR-2']);
+    }));
 
     it('should call updateFilters when form changes', () => {
       const testFilters = {
@@ -141,12 +145,12 @@ describe('FilterPanelComponent', () => {
       component.filterForm.patchValue(testFilters);
 
       expect(cultureService.updateFilters).toHaveBeenCalledWith(
-        jasmine.objectContaining(testFilters),
+        expect.objectContaining(testFilters),
       );
     });
 
     it('should handle empty strain list', async () => {
-      mockCultureService.getCultures.and.returnValue(of([]));
+      mockCultureService.getCultures.mockReturnValue(of([]));
 
       // Create new fixture with updated mock
       const newFixture = TestBed.createComponent(FilterPanelComponent);
@@ -189,12 +193,12 @@ describe('FilterPanelComponent', () => {
     });
 
     it('should trigger updateFilters after reset', () => {
-      cultureService.updateFilters.calls.reset();
+      cultureService.updateFilters.mockClear();
 
       component.resetFilters();
 
       expect(cultureService.updateFilters).toHaveBeenCalledWith(
-        jasmine.objectContaining({
+        expect.objectContaining({
           strain: '',
           type: '',
           filialGeneration: '',
@@ -283,22 +287,22 @@ describe('FilterPanelComponent', () => {
   describe('Form Validation', () => {
     it('should accept valid strain values', () => {
       component.filterForm.patchValue({ strain: 'STR-1' });
-      expect(component.filterForm.get('strain')?.valid).toBeTrue();
+      expect(component.filterForm.get('strain')?.valid).toBe(true);
     });
 
     it('should accept empty strain values', () => {
       component.filterForm.patchValue({ strain: '' });
-      expect(component.filterForm.get('strain')?.valid).toBeTrue();
+      expect(component.filterForm.get('strain')?.valid).toBe(true);
     });
 
     it('should accept valid culture type values', () => {
       component.filterForm.patchValue({ type: CultureType.AGAR });
-      expect(component.filterForm.get('type')?.valid).toBeTrue();
+      expect(component.filterForm.get('type')?.valid).toBe(true);
     });
 
     it('should accept numeric minViability values', () => {
       component.filterForm.patchValue({ minViability: 50 });
-      expect(component.filterForm.get('minViability')?.valid).toBeTrue();
+      expect(component.filterForm.get('minViability')?.valid).toBe(true);
     });
 
     it('should accept boolean checkbox values', () => {
@@ -307,9 +311,9 @@ describe('FilterPanelComponent', () => {
         showContaminated: false,
         showClean: true,
       });
-      expect(component.filterForm.get('showArchived')?.valid).toBeTrue();
-      expect(component.filterForm.get('showContaminated')?.valid).toBeTrue();
-      expect(component.filterForm.get('showClean')?.valid).toBeTrue();
+      expect(component.filterForm.get('showArchived')?.valid).toBe(true);
+      expect(component.filterForm.get('showContaminated')?.valid).toBe(true);
+      expect(component.filterForm.get('showClean')?.valid).toBe(true);
     });
   });
 });

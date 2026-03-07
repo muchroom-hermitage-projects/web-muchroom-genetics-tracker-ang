@@ -4,17 +4,19 @@ import { CultureService } from '../../services/culture.service';
 import { GraphBuilderService } from '../../services/graph-builder.service';
 import { MatDialog } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { FormsModule } from '@angular/forms';
 import { NodeModalComponent } from '../node-modal/node-modal.component';
 import { Culture, CultureType } from '../../models/culture.model';
 import { of } from 'rxjs';
 
 class MockCultureService {
-  deleteCulture = jasmine.createSpy('deleteCulture');
-  updateCulture = jasmine.createSpy('updateCulture');
-  setSelectedNode = jasmine.createSpy('setSelectedNode');
+  deleteCulture = vi.fn();
+  updateCulture = vi.fn();
+  setSelectedNode = vi.fn();
 
   getCultures() {
     return of([]);
@@ -47,7 +49,7 @@ class DialogSpy {
   result: unknown = null;
   lastArgs: { component: unknown; config: unknown } | null = null;
 
-  open = jasmine.createSpy('open').and.callFake((component, config) => {
+  open = vi.fn().mockImplementation((component, config) => {
     this.lastArgs = { component, config };
     return { afterClosed: () => of(this.result) };
   });
@@ -85,6 +87,8 @@ describe('GenealogyGraphComponent', () => {
         MatIconModule,
         MatButtonModule,
         MatTooltipModule,
+        MatCheckboxModule,
+        FormsModule,
         NoopAnimationsModule,
       ],
       providers: [
@@ -115,13 +119,13 @@ describe('GenealogyGraphComponent', () => {
 
       expect(dialogSpy.open).toHaveBeenCalledWith(
         NodeModalComponent,
-        jasmine.any(Object),
+        expect.any(Object),
       );
       expect(cultureService.updateCulture).toHaveBeenCalledWith('node-1', {
         label: 'Updated Label',
       });
       expect(dialogSpy.lastArgs?.config).toEqual(
-        jasmine.objectContaining({ data: jasmine.any(Object) }),
+        expect.objectContaining({ data: expect.any(Object) }),
       );
     });
 

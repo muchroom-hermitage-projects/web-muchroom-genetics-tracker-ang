@@ -1,12 +1,13 @@
 import { TestBed } from '@angular/core/testing';
-
 import { CultureService } from './culture.service';
 
 describe('CultureService', () => {
   let service: CultureService;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
+    TestBed.configureTestingModule({
+      providers: [CultureService],
+    });
     service = TestBed.inject(CultureService);
   });
 
