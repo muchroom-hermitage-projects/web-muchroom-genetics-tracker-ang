@@ -10,29 +10,49 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { FormsModule } from '@angular/forms';
 import { NodeModalComponent } from '../node-modal/node-modal.component';
-import { Culture } from '../../models/culture.model';
-import { of } from 'rxjs';
+import {
+  Culture,
+  Relationship,
+  RelationshipType,
+} from '../../models/culture.model';
+import { BehaviorSubject, Observable, of } from 'rxjs';
 import { SAMPLE_CULTURE } from '../../../testing/mocks';
 
 class MockCultureService {
+  private readonly filteredCultures$ = new BehaviorSubject<Culture[]>([]);
+  private readonly relationships$ = new BehaviorSubject<Relationship[]>([]);
+  private readonly selectedNodeId$ = new BehaviorSubject<string | null>(null);
+
   deleteCulture = vi.fn();
   updateCulture = vi.fn();
   setSelectedNode = vi.fn();
 
-  getCultures() {
+  emitFilteredCultures(value: Culture[]) {
+    this.filteredCultures$.next(value);
+  }
+
+  emitRelationships(value: Relationship[]) {
+    this.relationships$.next(value);
+  }
+
+  emitSelectedNodeId(value: string | null) {
+    this.selectedNodeId$.next(value);
+  }
+
+  getCultures(): Observable<Culture[]> {
     return of([]);
   }
 
   getFilteredCultures() {
-    return of([]);
+    return this.filteredCultures$.asObservable();
   }
 
   getRelationships() {
-    return of([]);
+    return this.relationships$.asObservable();
   }
 
   getSelectedNodeId() {
-    return of(null);
+    return this.selectedNodeId$.asObservable();
   }
 }
 
@@ -98,6 +118,225 @@ describe('GenealogyGraphComponent', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('filters visible relationships based on current graph state', () => {
+    const cultures: Culture[] = [
+      { ...sampleCulture, id: 'a' },
+      { ...sampleCulture, id: 'b' },
+    ];
+    const relationships: Relationship[] = [
+      {
+        id: 'r1',
+        sourceId: 'a',
+        targetId: 'b',
+        type: RelationshipType.TRANSFER,
+      },
+      {
+        id: 'r2',
+        sourceId: 'b',
+        targetId: 'c',
+        type: RelationshipType.TRANSFER,
+      },
+    ];
+
+    (component as any).cultures = cultures;
+    (component as any).relationships = relationships;
+
+    const visible = (component as any).getVisibleRelationships();
+    expect(visible).toEqual([relationships[0]]);
+  });
+
+  it('updates subtree mode label and tooltip when signal changes', () => {
+    expect(component.subtreeModeLabel()).toBe('Subtree Mode');
+    expect(component.subtreeModeTooltip()).toContain(
+      'moves all its descendants',
+    );
+
+    component.subtreeMode.set(false);
+
+    expect(component.subtreeModeLabel()).toBe('Cascade Drag');
+    expect(component.subtreeModeTooltip()).toContain(
+      'moves only that specific node',
+    );
+  });
+
+  it('highlights selected node and ancestor path', () => {
+    const removeClass = vi.fn();
+    const selectedNodeAddClass = vi.fn();
+    const ancestorAddClass = vi.fn();
+
+    const incomingEdge = {
+      data: vi.fn().mockImplementation((field: string) => {
+        return field === 'source' ? 'ancestor' : undefined;
+      }),
+    };
+
+    const nodeMap: Record<string, any> = {
+      selected: {
+        addClass: selectedNodeAddClass,
+        incomers: vi.fn().mockReturnValue([incomingEdge]),
+      },
+      ancestor: {
+        addClass: ancestorAddClass,
+        incomers: vi.fn().mockReturnValue([]),
+      },
+    };
+
+    (component as any).cy = {
+      elements: vi.fn().mockReturnValue({ removeClass }),
+      getElementById: vi.fn().mockImplementation((id: string) => nodeMap[id]),
+      destroy: vi.fn(),
+    };
+
+    (component as any).highlightNode('selected');
+
+    expect(removeClass).toHaveBeenCalledWith('selected');
+    expect(selectedNodeAddClass).toHaveBeenCalledWith('selected');
+    expect(ancestorAddClass).toHaveBeenCalledWith('selected');
+  });
+
+  it('swallows highlight path errors without throwing', () => {
+    const badNode = {
+      addClass: vi.fn(),
+      incomers: vi.fn(() => {
+        throw new Error('broken graph state');
+      }),
+    };
+
+    (component as any).cy = {
+      elements: vi.fn().mockReturnValue({ removeClass: vi.fn() }),
+      getElementById: vi.fn().mockImplementation(() => badNode),
+      destroy: vi.fn(),
+    };
+
+    expect(() => (component as any).highlightNode('selected')).not.toThrow();
+  });
+
+  it('moves descendants during drag when subtree mode is enabled', () => {
+    const handlers = new Map<string, (event: any) => void>();
+    const register = vi.fn(
+      (event: string, selector: string, callback: (evt: any) => void) => {
+        handlers.set(`${event}:${selector}`, callback);
+      },
+    );
+
+    const childPos = { x: 30, y: 40 };
+    const rootPos = { x: 10, y: 20 };
+
+    const childNode = {
+      id: () => 'child',
+      outgoers: vi.fn().mockReturnValue([]),
+      position: vi
+        .fn()
+        .mockImplementation((arg: string | { x: number; y: number }) => {
+          if (typeof arg === 'string') {
+            return (childPos as any)[arg];
+          }
+          childPos.x = arg.x;
+          childPos.y = arg.y;
+          return undefined;
+        }),
+    };
+
+    const edgeToChild = { target: () => childNode };
+    const rootNode = {
+      id: () => 'root',
+      outgoers: vi.fn().mockReturnValue([edgeToChild]),
+      position: vi
+        .fn()
+        .mockImplementation((arg: string | { x: number; y: number }) => {
+          if (typeof arg === 'string') {
+            return (rootPos as any)[arg];
+          }
+          rootPos.x = arg.x;
+          rootPos.y = arg.y;
+          return undefined;
+        }),
+    };
+
+    (component as any).cy = { on: register, destroy: vi.fn() };
+    (component as any).setupRecursiveSubtreeDragging();
+
+    handlers.get('grab:node')!({ target: rootNode });
+    rootNode.position({ x: 25, y: 35 });
+    handlers.get('drag:node')!({ target: rootNode });
+    handlers.get('free:node')!({ target: rootNode });
+
+    expect(childPos).toEqual({ x: 45, y: 55 });
+  });
+
+  it('does not move descendants during drag when subtree mode is disabled', () => {
+    const handlers = new Map<string, (event: any) => void>();
+    const register = vi.fn(
+      (event: string, selector: string, callback: (evt: any) => void) => {
+        handlers.set(`${event}:${selector}`, callback);
+      },
+    );
+
+    const childPos = { x: 30, y: 40 };
+    const rootPos = { x: 10, y: 20 };
+
+    const childNode = {
+      id: () => 'child',
+      outgoers: vi.fn().mockReturnValue([]),
+      position: vi
+        .fn()
+        .mockImplementation((arg: string | { x: number; y: number }) => {
+          if (typeof arg === 'string') {
+            return (childPos as any)[arg];
+          }
+          childPos.x = arg.x;
+          childPos.y = arg.y;
+          return undefined;
+        }),
+    };
+
+    const edgeToChild = { target: () => childNode };
+    const rootNode = {
+      id: () => 'root',
+      outgoers: vi.fn().mockReturnValue([edgeToChild]),
+      position: vi
+        .fn()
+        .mockImplementation((arg: string | { x: number; y: number }) => {
+          if (typeof arg === 'string') {
+            return (rootPos as any)[arg];
+          }
+          rootPos.x = arg.x;
+          rootPos.y = arg.y;
+          return undefined;
+        }),
+    };
+
+    (component as any).cy = { on: register, destroy: vi.fn() };
+    (component as any).setupRecursiveSubtreeDragging();
+    component.subtreeMode.set(false);
+
+    handlers.get('grab:node')!({ target: rootNode });
+    rootNode.position({ x: 25, y: 35 });
+    handlers.get('drag:node')!({ target: rootNode });
+
+    expect(childPos).toEqual({ x: 30, y: 40 });
+  });
+
+  it('deduplicates descendants when graph has a cycle', () => {
+    const rootNode: any = {
+      id: () => 'root',
+      outgoers: vi.fn(),
+    };
+    const childNode: any = {
+      id: () => 'child',
+      outgoers: vi.fn(),
+    };
+
+    const rootToChild = { target: () => childNode };
+    const childToRoot = { target: () => rootNode };
+
+    rootNode.outgoers.mockReturnValue([rootToChild]);
+    childNode.outgoers.mockReturnValue([childToRoot]);
+
+    const descendants = (component as any).getDescendants(rootNode);
+    expect(descendants.map((node: any) => node.id())).toEqual(['child']);
   });
 
   describe('openEditCultureModal', () => {
