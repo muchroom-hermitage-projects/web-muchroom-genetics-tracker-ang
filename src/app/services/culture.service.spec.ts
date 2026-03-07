@@ -1,6 +1,6 @@
 import { effect, signal } from '@angular/core';
-import { fakeAsync, TestBed, tick } from '@angular/core/testing';
-import { firstValueFrom, skip } from 'rxjs';
+import { fakeAsync, TestBed } from '@angular/core/testing';
+import { firstValueFrom } from 'rxjs';
 import {
   CultureService,
   FilterOptions,
@@ -69,35 +69,28 @@ describe('CultureService', () => {
     let runs = 0;
 
     const ref = TestBed.runInInjectionContext(() =>
-      effect(
-        () => {
-          const nextFilters = trigger();
-          runs += 1;
-          service.updateFilters(nextFilters);
-        },
-        { allowSignalWrites: true },
-      ),
+      effect(() => {
+        const nextFilters = trigger();
+        runs += 1;
+        service.updateFilters(nextFilters);
+      }),
     );
 
-    tick();
+    TestBed.flushEffects();
     expect(runs).toBe(1);
 
     trigger.set({ strain: 'STR-1' });
-    tick();
+    TestBed.flushEffects();
     expect(runs).toBe(2);
 
     trigger.set({ minViability: 50 });
-    tick();
+    TestBed.flushEffects();
     expect(runs).toBe(3);
 
     ref.destroy();
   }));
 
-  it('filters cultures by strain/type/filial/archived/contamination/viability', async () => {
-    const filteredPromise = firstValueFrom(
-      service.getFilteredCultures().pipe(skip(1)),
-    );
-
+  it('filters cultures by strain/type/filial/archived/contamination/viability', () => {
     setState({
       cultures: CULTURE_SERVICE_TREE_CULTURES,
       relationships: CULTURE_SERVICE_TREE_RELATIONSHIPS,
@@ -111,8 +104,9 @@ describe('CultureService', () => {
       showClean: true,
       minViability: 80,
     });
+    TestBed.flushEffects();
 
-    const filtered = await filteredPromise;
+    const filtered = (service as any).filteredCulturesSignal() as Culture[];
     expect(filtered.map((culture) => culture.id)).toEqual([
       'root',
       'grandchild',
@@ -392,11 +386,10 @@ describe('CultureService', () => {
   });
 
   it('searches cultures by label, description, and notes', async () => {
-    const labelPromise = firstValueFrom(
-      service.searchCultures('root').pipe(skip(1)),
-    );
     setState({ cultures: CULTURE_SERVICE_TREE_CULTURES });
-    const byLabel = await labelPromise;
+    TestBed.flushEffects();
+
+    const byLabel = await firstValueFrom(service.searchCultures('root'));
     expect(byLabel.map((culture) => culture.id)).toContain('root');
 
     const byDescription = await firstValueFrom(
@@ -409,12 +402,10 @@ describe('CultureService', () => {
   });
 
   it('computes culture stats by type/strain and archived count', async () => {
-    const statsPromise = firstValueFrom(
-      service.getCultureStats().pipe(skip(1)),
-    );
     setState({ cultures: CULTURE_SERVICE_TREE_CULTURES });
+    TestBed.flushEffects();
 
-    const stats = await statsPromise;
+    const stats = await firstValueFrom(service.getCultureStats());
     expect(stats.total).toBe(4);
     expect(stats.archived).toBe(1);
     expect(stats.byType[CultureType.AGAR]).toBe(3);

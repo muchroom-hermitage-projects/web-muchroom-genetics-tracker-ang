@@ -8,7 +8,7 @@ describe('AboutModalComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [AboutModalComponent],
+      imports: [AboutModalComponent],
       schemas: [NO_ERRORS_SCHEMA],
     }).compileComponents();
 

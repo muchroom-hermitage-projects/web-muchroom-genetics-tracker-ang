@@ -74,7 +74,6 @@ describe('NodeModalComponent', () => {
     } as Mocked<MatDialogRef<NodeModalComponent>>;
 
     await TestBed.configureTestingModule({
-      declarations: [NodeModalComponent],
       imports: [
         ReactiveFormsModule,
         MatDialogModule,
@@ -86,6 +85,7 @@ describe('NodeModalComponent', () => {
         MatButtonModule,
         MatTooltipModule,
         NoopAnimationsModule,
+        NodeModalComponent,
       ],
       schemas: [NO_ERRORS_SCHEMA],
       providers: [

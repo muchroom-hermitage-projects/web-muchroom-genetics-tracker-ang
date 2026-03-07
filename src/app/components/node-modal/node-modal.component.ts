@@ -1,8 +1,21 @@
 // components/node-modal/node-modal.component.ts
 import { Component, Inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { MatDialog } from '@angular/material/dialog';
+import { ReactiveFormsModule } from '@angular/forms';
+import {
+  MatDialogRef,
+  MAT_DIALOG_DATA,
+  MatDialog,
+  MatDialogModule,
+} from '@angular/material/dialog';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import {
   Culture,
   CULTURE_TYPE_OPTIONS,
@@ -13,6 +26,19 @@ import { CultureService, StrainOption } from '../../services/culture.service';
 
 @Component({
   selector: 'app-node-modal',
+  standalone: true,
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    MatDialogModule,
+    MatFormFieldModule,
+    MatSelectModule,
+    MatInputModule,
+    MatCheckboxModule,
+    MatIconModule,
+    MatButtonModule,
+    MatTooltipModule,
+  ],
   templateUrl: './node-modal.component.html',
   styleUrls: ['./node-modal.component.scss'],
 })

@@ -1,5 +1,5 @@
 1. Add a checkbox in Edit Culture modal, beside "Archived", to mark "Contaminated" culture. When the culture is contaminated, the modal background should become reddish; beside the header "Edit Culture" there should be red, bold text: "(contaminated)",
-and all new children created from it after marking its "contaminated" state shold also receive this UI changes (reddish background, "contaminated" text).
+   and all new children created from it after marking its "contaminated" state shold also receive this UI changes (reddish background, "contaminated" text).
 2. Filters left panel should now also include "show contaminated", and "show clean" (uncontaminated) checkboxes.
 2. Relations should no longer be editable - the input should remains, but be disabled. Instead we should have defaults automatically selected based on the selected child "Type":
    a. spores to anything = germination
@@ -16,6 +16,7 @@ and all new children created from it after marking its "contaminated" state shol
 { value: CultureType.SLANT, label: 'Slant (SL)', abbreviation: 'SL' },
 { value: CultureType.CASTELLANI_WATER, label: 'Castellani water (CW)', abbreviation: 'CW' },
 
+# Future features:
 
 - Adding options to rename relations
 - Adding option to add/remove relations (under the hood relations have uuids assigned to them)
@@ -37,3 +38,11 @@ and all new children created from it after marking its "contaminated" state shol
   - when "save" button is clicked, it the currently selected save is replaced with the new one
 - Add buttons to zoom in/out the graph, and add indicator to the UI showing the current zoom level (e.g. 100%, 150%, etc.)
 - Refactor navbar menu (currently in app.component), to a separate component
+
+# Project structure:
+
+- Add data-testid attributes to all important elements in the UI, to make it easier to write tests for them
+- Add '@playwright-testing/axe' to the project to test a11y
+- migrate to Nx repo, to make it easier to maintain versions for mobile and desktop (Electron)
+- Add a version for Electron
+- Add a version for mobile (ionic?)

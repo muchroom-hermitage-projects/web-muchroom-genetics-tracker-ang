@@ -2,13 +2,34 @@
 import { Component } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatButtonModule } from '@angular/material/button';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatToolbarModule } from '@angular/material/toolbar';
 import { NodeModalComponent } from './components/node-modal/node-modal.component';
 import { AboutModalComponent } from './components/about-modal/about-modal.component';
 import { CultureService } from './services/culture.service';
 import { CultureType } from './models/culture.model';
+import { FilterPanelComponent } from './components/filter-panel/filter-panel.component';
+import { GenealogyGraphComponent } from './components/genealogy-graph/genealogy-graph.component';
+import { CultureDetailComponent } from './components/culture-detail/culture-detail.component';
 
 @Component({
   selector: 'app-root',
+  standalone: true,
+  imports: [
+    MatToolbarModule,
+    MatButtonModule,
+    MatIconModule,
+    MatMenuModule,
+    MatDividerModule,
+    MatSidenavModule,
+    FilterPanelComponent,
+    GenealogyGraphComponent,
+    CultureDetailComponent,
+  ],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
 })

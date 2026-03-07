@@ -11,7 +11,12 @@ import {
   signal,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { FormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
+import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import cytoscape from 'cytoscape';
 import dagre from 'cytoscape-dagre';
 
@@ -25,8 +30,18 @@ if (cytoscape && typeof cytoscape.use === 'function') {
   cytoscape.use(dagre);
 }
 
+const E2E_CY_HANDLE = '__GENETICS_GRAPH_CY__';
+
 @Component({
   selector: 'app-genealogy-graph',
+  standalone: true,
+  imports: [
+    FormsModule,
+    MatButtonModule,
+    MatIconModule,
+    MatTooltipModule,
+    MatCheckboxModule,
+  ],
   templateUrl: './genealogy-graph.component.html',
   styleUrls: ['./genealogy-graph.component.scss'],
 })
@@ -86,6 +101,7 @@ export class GenealogyGraphComponent implements AfterViewInit, OnDestroy {
     if (this.cy) {
       this.cy.destroy();
     }
+    this.clearE2EHandle();
   }
 
   private getVisibleRelationships(): Relationship[] {
@@ -126,6 +142,7 @@ export class GenealogyGraphComponent implements AfterViewInit, OnDestroy {
       autoungrabify: false,
       autounselectify: false,
     });
+    this.exposeCyForE2E();
 
     // Node click handler
     this.cy.on('tap', 'node', (event) => {
@@ -350,6 +367,23 @@ export class GenealogyGraphComponent implements AfterViewInit, OnDestroy {
 
       this.cultureService.updateCulture(culture.id, result.updates);
     });
+  }
+
+  private exposeCyForE2E(): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    (window as Window & { [E2E_CY_HANDLE]?: cytoscape.Core })[E2E_CY_HANDLE] =
+      this.cy;
+  }
+
+  private clearE2EHandle(): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    delete (window as Window & { [E2E_CY_HANDLE]?: cytoscape.Core })[
+      E2E_CY_HANDLE
+    ];
   }
 
   fitGraph(): void {

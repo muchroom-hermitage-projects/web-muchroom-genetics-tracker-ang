@@ -12,7 +12,7 @@ import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatListModule } from '@angular/material/list';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { of } from 'rxjs';
-import { NO_ERRORS_SCHEMA } from '@angular/core';
+import { NO_ERRORS_SCHEMA, signal } from '@angular/core';
 import { CultureService } from './services/culture.service';
 import { NodeModalComponent } from './components/node-modal/node-modal.component';
 import { AboutModalComponent } from './components/about-modal/about-modal.component';
@@ -27,10 +27,22 @@ const matDialogMock = {
 const snackBarMock = {
   open: vi.fn(),
 };
+const selectedNodeIdSignal = signal<string | null>(null);
+const culturesSignal = signal<any[]>([]);
 const cultureServiceMock = {
   addCulture: vi.fn(),
   exportDataAsJson: vi.fn().mockReturnValue(APP_EXPORT_JSON),
   importDataFromJson: vi.fn(),
+  getFilteredCultures: vi.fn().mockReturnValue(of([])),
+  getRelationships: vi.fn().mockReturnValue(of([])),
+  getSelectedNodeId: vi.fn().mockReturnValue(of(null)),
+  getCultures: vi.fn().mockReturnValue(of([])),
+  updateFilters: vi.fn(),
+  getSelectedNodeIdSignal: vi.fn(() => selectedNodeIdSignal.asReadonly()),
+  getCulturesSignal: vi.fn(() => culturesSignal.asReadonly()),
+  getAncestors: vi.fn().mockReturnValue([]),
+  getDescendants: vi.fn().mockReturnValue([]),
+  setSelectedNode: vi.fn(),
 };
 
 describe('AppComponent', () => {
@@ -46,6 +58,31 @@ describe('AppComponent', () => {
     cultureServiceMock.addCulture.mockClear();
     cultureServiceMock.exportDataAsJson.mockClear();
     cultureServiceMock.importDataFromJson.mockClear();
+    cultureServiceMock.getFilteredCultures.mockClear();
+    cultureServiceMock.getRelationships.mockClear();
+    cultureServiceMock.getSelectedNodeId.mockClear();
+    cultureServiceMock.getCultures.mockClear();
+    cultureServiceMock.updateFilters.mockClear();
+    cultureServiceMock.getSelectedNodeIdSignal.mockClear();
+    cultureServiceMock.getCulturesSignal.mockClear();
+    cultureServiceMock.getAncestors.mockClear();
+    cultureServiceMock.getDescendants.mockClear();
+    cultureServiceMock.setSelectedNode.mockClear();
+    selectedNodeIdSignal.set(null);
+    culturesSignal.set([]);
+
+    TestBed.overrideComponent(AppComponent, {
+      set: {
+        imports: [
+          MatToolbarModule,
+          MatButtonModule,
+          MatIconModule,
+          MatMenuModule,
+          MatDividerModule,
+          MatSidenavModule,
+        ],
+      },
+    });
 
     await TestBed.configureTestingModule({
       imports: [
@@ -58,8 +95,8 @@ describe('AppComponent', () => {
         MatSidenavModule,
         MatListModule,
         NoopAnimationsModule,
+        AppComponent,
       ],
-      declarations: [AppComponent],
       providers: [
         { provide: MatDialog, useValue: matDialogMock },
         { provide: MatSnackBar, useValue: snackBarMock },

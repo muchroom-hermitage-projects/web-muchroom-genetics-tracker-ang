@@ -10,11 +10,26 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder } from '@angular/forms';
+import { ReactiveFormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { CultureService, FilterOptions } from '../../services/culture.service';
 import { CULTURE_TYPE_OPTIONS } from '../../models/culture.model';
 
 @Component({
   selector: 'app-filter-panel',
+  standalone: true,
+  imports: [
+    ReactiveFormsModule,
+    MatFormFieldModule,
+    MatSelectModule,
+    MatInputModule,
+    MatCheckboxModule,
+    MatButtonModule,
+  ],
   templateUrl: './filter-panel.component.html',
   styleUrls: ['./filter-panel.component.scss'],
 })

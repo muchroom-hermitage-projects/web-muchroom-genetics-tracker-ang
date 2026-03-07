@@ -1,12 +1,31 @@
 // components/culture-detail/culture-detail.component.ts
 import { Component, computed } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatChipsModule } from '@angular/material/chips';
 import { MatDialog } from '@angular/material/dialog';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { CultureService } from '../../services/culture.service';
 import { Culture } from '../../models/culture.model';
 import { NodeModalComponent } from '../node-modal/node-modal.component';
 
 @Component({
   selector: 'app-culture-detail',
+  standalone: true,
+  imports: [
+    CommonModule,
+    MatButtonModule,
+    MatTooltipModule,
+    MatIconModule,
+    MatMenuModule,
+    MatDividerModule,
+    MatCardModule,
+    MatChipsModule,
+  ],
   templateUrl: './culture-detail.component.html',
   styleUrls: ['./culture-detail.component.scss'],
 })

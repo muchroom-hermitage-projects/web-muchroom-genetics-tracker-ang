@@ -74,7 +74,7 @@ describe('CultureDetailComponent', () => {
     dialogSpy = new DialogSpy();
 
     await TestBed.configureTestingModule({
-      declarations: [CultureDetailComponent],
+      imports: [CultureDetailComponent],
       providers: [
         { provide: MatDialog, useValue: dialogSpy },
         { provide: CultureService, useClass: MockCultureService },

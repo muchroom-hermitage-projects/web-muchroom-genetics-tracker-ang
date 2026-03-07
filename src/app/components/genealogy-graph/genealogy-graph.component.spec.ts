@@ -92,7 +92,6 @@ describe('GenealogyGraphComponent', () => {
     dialogSpy = new DialogSpy();
 
     await TestBed.configureTestingModule({
-      declarations: [GenealogyGraphComponent],
       imports: [
         MatIconModule,
         MatButtonModule,
@@ -100,6 +99,7 @@ describe('GenealogyGraphComponent', () => {
         MatCheckboxModule,
         FormsModule,
         NoopAnimationsModule,
+        GenealogyGraphComponent,
       ],
       providers: [
         { provide: CultureService, useClass: MockCultureService },

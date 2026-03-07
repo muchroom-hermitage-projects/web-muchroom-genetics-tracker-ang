@@ -48,7 +48,6 @@ describe('FilterPanelComponent', () => {
     mockFiltersState.set({ ...DEFAULT_FILTERS });
 
     await TestBed.configureTestingModule({
-      declarations: [FilterPanelComponent],
       imports: [
         ReactiveFormsModule,
         MatFormFieldModule,
@@ -57,6 +56,7 @@ describe('FilterPanelComponent', () => {
         MatCheckboxModule,
         MatButtonModule,
         NoopAnimationsModule,
+        FilterPanelComponent,
       ],
       providers: [{ provide: CultureService, useValue: mockCultureService }],
     }).compileComponents();
