@@ -1,4 +1,3 @@
-// components/genealogy-graph/genealogy-graph.component.ts
 import {
   Component,
   AfterViewInit,
@@ -334,7 +333,7 @@ export class GenealogyGraphComponent implements AfterViewInit, OnDestroy {
           });
         }
       } catch (e) {
-        // console.warn('Error highlighting path:', e);
+        console.warn('Error highlighting path:', e);
       }
     }
   }

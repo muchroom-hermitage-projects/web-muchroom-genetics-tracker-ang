@@ -10,7 +10,6 @@ import {
 } from '@angular/platform-browser-dynamic/testing';
 import { afterEach, vi } from 'vitest';
 
-/* eslint-disable no-console */
 const originalConsoleError = console.error;
 const originalConsoleWarn = console.warn;
 
@@ -35,7 +34,6 @@ console.warn = (...args: unknown[]) => {
   }
   return originalConsoleWarn(...args);
 };
-/* eslint-enable no-console */
 
 if (!getTestBed().platform) {
   getTestBed().initTestEnvironment(

@@ -1,4 +1,3 @@
-// services/culture.service.ts
 import {
   Injector,
   Signal,

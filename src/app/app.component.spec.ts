@@ -18,6 +18,7 @@ import { NodeModalComponent } from './components/node-modal/node-modal.component
 import { AboutModalComponent } from './components/about-modal/about-modal.component';
 import { CultureType } from './models/culture.model';
 import { APP_ADD_ROOT_MODAL_RESULT, APP_EXPORT_JSON } from '../testing/mocks';
+import { MockInstance } from 'vitest';
 
 const matDialogMock = {
   open: vi.fn().mockReturnValue({
@@ -181,7 +182,7 @@ describe('AppComponent', () => {
   });
 
   describe('exportData', () => {
-    let createElementSpy: vi.SpyInstance;
+    let createElementSpy: MockInstance;
     let mockAnchor: any;
 
     beforeEach(() => {
@@ -194,8 +195,6 @@ describe('AppComponent', () => {
       createElementSpy = vi
         .spyOn(document, 'createElement')
         .mockReturnValue(mockAnchor);
-      // vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock-url');
-      // vi.spyOn(URL, 'revokeObjectURL');
       URL.createObjectURL = vi.fn().mockReturnValue('blob:mock-url');
       URL.revokeObjectURL = vi.fn();
     });
