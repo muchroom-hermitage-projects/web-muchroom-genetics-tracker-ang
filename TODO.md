@@ -46,3 +46,9 @@
 - migrate to Nx repo, to make it easier to maintain versions for mobile and desktop (Electron)
 - Add a version for Electron
 - Add a version for mobile (ionic?)
+- Add robust logging (LoggerService)
+- Migrate to zoneless Angular
+- Clean up the "window hack" from GenealogyGraphComponent after migrating to Angular 20
+- Add a list mode (should be more accessible than graph mode), there should be a toggle button to switch between graph and list mode, and the app should remember the selected mode in localStorage
+- Add a "dark mode" toggle, and remember the selected mode in localStorage
+- Add a "high contrast mode" toggle, and remember the selected mode in localStorage
