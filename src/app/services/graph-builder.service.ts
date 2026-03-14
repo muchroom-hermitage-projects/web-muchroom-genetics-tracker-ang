@@ -168,16 +168,14 @@ export class GraphBuilderService {
       {
         selector: 'edge',
         style: {
-          width: '2px',
+          width: '14px',
           'line-color': '#9e9e9e',
           'target-arrow-color': '#9e9e9e',
           'target-arrow-shape': 'triangle',
           'curve-style': 'bezier',
           label: 'data(label)',
-          'font-size': '8px',
+          'font-size': '12px',
           'text-rotation': 'autorotate',
-          'text-margin-x': '5px',
-          'text-margin-y': '5px',
         },
       },
       {
@@ -192,7 +190,7 @@ export class GraphBuilderService {
         style: {
           'line-color': '#7e57c2',
           'target-arrow-color': '#7e57c2',
-          'line-style': 'dashed',
+          'line-style': 'dotted',
         },
       },
       {
