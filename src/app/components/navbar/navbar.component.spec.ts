@@ -5,7 +5,9 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { CultureService } from '../../services/culture.service';
 import { DataImportExportService } from '../../services/data-import-export.service';
 import { NodeModalComponent } from '../node-modal/node-modal.component';
+import { AboutModalComponent } from '../about-modal/about-modal.component';
 import { APP_EXPORT_JSON } from '../../../testing/mocks';
+import { CultureType } from '../../models/culture.model';
 
 describe('NavbarComponent', () => {
   let fixture: ComponentFixture<NavbarComponent>;
@@ -63,13 +65,33 @@ describe('NavbarComponent', () => {
   it('opens the add root culture dialog from the toolbar button', () => {
     const button = Array.from(
       fixture.nativeElement.querySelectorAll('button'),
-    ).find((el) => el.textContent?.includes('Add Root Culture'));
+    ).find((el: HTMLElement) => el.textContent?.includes('Add Root Culture'));
 
     button?.click();
 
     expect(dialogMock.open).toHaveBeenCalledWith(
       NodeModalComponent,
       expect.objectContaining({ width: '500px' }),
+    );
+  });
+
+  it('adds a root culture when the dialog returns updates', () => {
+    dialogMock.open.mockReturnValue({
+      afterClosed: () => ({
+        subscribe: (cb: (value: unknown) => void) =>
+          cb({
+            updates: {
+              label: 'New Root',
+              type: CultureType.SPORE,
+            },
+          }),
+      }),
+    });
+
+    component.addRootCulture();
+
+    expect(cultureServiceMock.addCulture).toHaveBeenCalledWith(
+      expect.objectContaining({ label: 'New Root', type: CultureType.SPORE }),
     );
   });
 
@@ -117,5 +139,77 @@ describe('NavbarComponent', () => {
       file,
     );
     expect(input.value).toBe('');
+  });
+
+  it('does nothing when no file is selected', async () => {
+    const input = document.createElement('input');
+    Object.defineProperty(input, 'files', { value: [] });
+    input.value = '';
+
+    await component.onImportFileSelected({ target: input } as Event);
+
+    expect(dataImportExportServiceMock.importFromFile).not.toHaveBeenCalled();
+    expect(snackBarMock.open).not.toHaveBeenCalled();
+  });
+
+  it('shows an error snackbar when import fails', async () => {
+    dataImportExportServiceMock.importFromFile.mockRejectedValueOnce(
+      new Error('Boom'),
+    );
+    const input = document.createElement('input');
+    Object.defineProperty(input, 'files', {
+      value: [new File(['{}'], 'bad.json')],
+    });
+
+    await component.onImportFileSelected({ target: input } as Event);
+
+    expect(snackBarMock.open).toHaveBeenCalledWith(
+      'Import failed: Boom',
+      'Close',
+      { duration: 5000 },
+    );
+    expect(input.value).toBe('');
+  });
+
+  it('delegates menu actions to the appropriate handlers', () => {
+    const importSpy = vi.spyOn(component, 'importData');
+    const exportSpy = vi.spyOn(component, 'exportData');
+    const aboutSpy = vi.spyOn(component, 'showAbout');
+    const fakeInput = Object.assign(document.createElement('input'), {
+      click: vi.fn(),
+    }) as HTMLInputElement;
+    const originalCreateObjectURL = URL.createObjectURL;
+    const originalRevokeObjectURL = URL.revokeObjectURL;
+    URL.createObjectURL = vi.fn().mockReturnValue('blob:mock-url');
+    URL.revokeObjectURL = vi.fn();
+
+    component.handleMenuAction('import', fakeInput);
+    component.handleMenuAction('export', fakeInput);
+    component.handleMenuAction('about', fakeInput);
+
+    expect(importSpy).toHaveBeenCalledWith(fakeInput);
+    expect(exportSpy).toHaveBeenCalledTimes(1);
+    expect(aboutSpy).toHaveBeenCalledTimes(1);
+
+    URL.createObjectURL = originalCreateObjectURL;
+    URL.revokeObjectURL = originalRevokeObjectURL;
+  });
+
+  it('opens the about dialog with expected sizing', () => {
+    component.showAbout();
+
+    expect(dialogMock.open).toHaveBeenCalledWith(
+      AboutModalComponent,
+      expect.objectContaining({ width: '700px', maxWidth: '95vw' }),
+    );
+  });
+
+  it('clicks the provided input when importData is invoked', () => {
+    const clickSpy = vi.fn();
+    const input = { click: clickSpy } as unknown as HTMLInputElement;
+
+    component.importData(input);
+
+    expect(clickSpy).toHaveBeenCalledTimes(1);
   });
 });
