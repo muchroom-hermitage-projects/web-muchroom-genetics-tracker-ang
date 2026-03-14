@@ -22,6 +22,7 @@ export class AboutModalComponent {
     "showArchived": false,
     "minViability": 0
   },
-  "selectedNodeId": "string | null"
+  "selectedNodeId": "string | null",
+  "_note": "CSV import is not supported; use JSON."
 }`;
 }
