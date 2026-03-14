@@ -71,11 +71,12 @@
     "typescript": "5.8.3"
   },
   "lint-staged": {
-    "*.{ts,html,scss,css,json}": [
+    "*.ts": [
+      "eslint --fix --max-warnings=0",
       "prettier --write"
     ],
-    "*.ts": [
-      "eslint --fix"
+    "*.{html,scss,css,json}": [
+      "prettier --write"
     ]
   }
 }
