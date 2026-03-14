@@ -1,6 +1,5 @@
 import { TestBed } from '@angular/core/testing';
 import { GraphBuilderService } from './graph-builder.service';
-import { CultureType } from '../models/culture.model';
 import {
   GRAPH_BUILDER_MOCK_CULTURES,
   GRAPH_BUILDER_MOCK_RELATIONSHIPS,
@@ -35,7 +34,8 @@ describe('GraphBuilderService', () => {
     expect(rootNode?.data?.label).toBe('Root');
     expect(rootNode?.data?.isArchived).toBe(false);
     expect(rootNode?.data?.isContaminated).toBe(false);
-    expect(rootNode?.data?.iconSvg).toContain('data:image/svg+xml;utf8,');
+    expect(rootNode?.data?.icon).toBe('agar');
+    expect(rootNode?.data?.iconUrl).toBe('assets/icons/agar.svg');
 
     expect(archivedNode?.group).toBe('nodes');
     expect(archivedNode?.data?.label).toBe('Archived child (archived)');
@@ -51,16 +51,6 @@ describe('GraphBuilderService', () => {
 
     expect(customEdge?.data?.relation).toBe('custom_relation');
     expect(customEdge?.data?.label).toBe('custom_relation');
-  });
-
-  it('returns deterministic icon data uris and uses cache for repeated requests', () => {
-    const first = (service as any).getTypeIconDataUri(CultureType.SPORE);
-    const second = (service as any).getTypeIconDataUri(CultureType.SPORE);
-    const other = (service as any).getTypeIconDataUri(CultureType.AGAR);
-
-    expect(first).toContain('data:image/svg+xml;utf8,');
-    expect(second).toBe(first);
-    expect(other).not.toBe(first);
   });
 
   it('maps known relationship labels and falls back for unknown values', () => {
@@ -81,17 +71,11 @@ describe('GraphBuilderService', () => {
     expect((service as any).getRelationshipLabel('unmapped')).toBe('unmapped');
   });
 
-  it('returns svg for each culture type and defaults to spore icon for unknown types', () => {
-    const values = Object.values(CultureType);
-    values.forEach((type) => {
-      const svg = (service as any).getTypeIconSvg(type);
-      expect(svg).toContain('<svg');
-      expect(svg).toContain('</svg>');
-    });
-
-    const sporeSvg = (service as any).getTypeIconSvg(CultureType.SPORE);
-    const fallbackSvg = (service as any).getTypeIconSvg('unknown_type');
-    expect(fallbackSvg).toBe(sporeSvg);
+  it('computes icon urls based on the icon key', () => {
+    expect((service as any).getIconUrl('agar')).toBe('assets/icons/agar.svg');
+    expect((service as any).getIconUrl('grain-spawn')).toBe(
+      'assets/icons/grain-spawn.svg',
+    );
   });
 
   it('exposes stylesheet entries for core, archived, contaminated, and edge states', () => {
@@ -102,7 +86,7 @@ describe('GraphBuilderService', () => {
       stylesheet.find((entry) => entry.selector === selector);
 
     expect(findStyle('node')?.style?.['background-image']).toBe(
-      'data(iconSvg)',
+      'data(iconUrl)',
     );
     expect(findStyle('edge')?.style?.['target-arrow-shape']).toBe('triangle');
     expect(findStyle('.selected')?.style?.['border-color']).toBe('#ffd700');
