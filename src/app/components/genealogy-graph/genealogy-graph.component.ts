@@ -124,17 +124,16 @@ export class GenealogyGraphComponent implements AfterViewInit, OnDestroy {
       container: this.cyContainer.nativeElement,
       elements: elements,
       style: this.graphBuilder.getStylesheet(),
-      // Fixed: Layout options are correctly formatted here
       layout: {
         name: 'dagre',
         // These are dagre-specific options that work in the initial layout
         nodeSep: 50,
         edgeSep: 20,
-        rankSep: 100,
+        rankSep: 50,
         rankDir: 'TB',
         ranker: 'network-simplex',
         animate: false,
-      } as any, // Type assertion to bypass the strict name check
+      } as any,
       userZoomingEnabled: true,
       userPanningEnabled: true,
       boxSelectionEnabled: false,
@@ -166,7 +165,6 @@ export class GenealogyGraphComponent implements AfterViewInit, OnDestroy {
     this.cy.on('tap', 'edge', (event) => {
       const edge = event.target;
       // console.log('Edge clicked:', edge.data());
-      // You could show relationship details here
     });
 
     // Recursive subtree dragging
@@ -290,7 +288,7 @@ export class GenealogyGraphComponent implements AfterViewInit, OnDestroy {
       // These options work in the layout method as well
       nodeSep: 50,
       edgeSep: 20,
-      rankSep: 100,
+      rankSep: 50,
       rankDir: 'TB',
       animate: true,
       animationDuration: 500,
@@ -395,7 +393,7 @@ export class GenealogyGraphComponent implements AfterViewInit, OnDestroy {
       name: 'dagre',
       nodeSep: 50,
       edgeSep: 20,
-      rankSep: 100,
+      rankSep: 50,
       rankDir: 'TB',
       animate: true,
       animationDuration: 500,
