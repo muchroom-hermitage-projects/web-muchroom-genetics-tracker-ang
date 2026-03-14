@@ -63,9 +63,9 @@ describe('NavbarComponent', () => {
   });
 
   it('opens the add root culture dialog from the toolbar button', () => {
-    const button = Array.from(
+    const button: any = Array.from(
       fixture.nativeElement.querySelectorAll('button'),
-    ).find((el: HTMLElement) => el.textContent?.includes('Add Root Culture'));
+    ).find((el: any) => el.textContent?.includes('Add Root Culture'));
 
     button?.click();
 
@@ -131,7 +131,7 @@ describe('NavbarComponent', () => {
       value: [file],
     });
     input.value = 'data.json';
-    const event = { target: input } as Event;
+    const event = { target: input } as any as Event;
 
     await component.onImportFileSelected(event);
 
@@ -146,7 +146,7 @@ describe('NavbarComponent', () => {
     Object.defineProperty(input, 'files', { value: [] });
     input.value = '';
 
-    await component.onImportFileSelected({ target: input } as Event);
+    await component.onImportFileSelected({ target: input } as any as Event);
 
     expect(dataImportExportServiceMock.importFromFile).not.toHaveBeenCalled();
     expect(snackBarMock.open).not.toHaveBeenCalled();
@@ -161,7 +161,7 @@ describe('NavbarComponent', () => {
       value: [new File(['{}'], 'bad.json')],
     });
 
-    await component.onImportFileSelected({ target: input } as Event);
+    await component.onImportFileSelected({ target: input } as any as Event);
 
     expect(snackBarMock.open).toHaveBeenCalledWith(
       'Import failed: Boom',
