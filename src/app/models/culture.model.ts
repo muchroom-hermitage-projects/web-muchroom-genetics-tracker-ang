@@ -1,4 +1,3 @@
-// models/culture.model.ts
 export enum CultureType {
   SPORE = 'spore',
   AGAR = 'agar',

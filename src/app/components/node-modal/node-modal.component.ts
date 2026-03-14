@@ -22,7 +22,8 @@ import {
   CultureType,
   RelationshipType,
 } from '../../models/culture.model';
-import { CultureService, StrainOption } from '../../services/culture.service';
+import { StrainOption } from '../../models/strains.model';
+import { CultureService } from '../../services/culture.service';
 
 @Component({
   selector: 'app-node-modal',

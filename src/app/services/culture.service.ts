@@ -20,6 +20,7 @@ import {
   getCultureTypeAbbreviation,
 } from '../models/culture.model';
 import { v4 as uuidv4 } from 'uuid';
+import { STRAIN_FAMILY_OPTIONS, StrainOption } from '../models/strains.model';
 
 export interface FilterOptions {
   strain: string;
@@ -39,24 +40,6 @@ export interface PersistedData {
   filters: FilterOptions;
   selectedNodeId: string | null;
 }
-
-export interface StrainOption {
-  prefix: string;
-  label: string;
-}
-
-const STRAIN_FAMILY_OPTIONS: StrainOption[] = [
-  { prefix: 'LED', label: 'Lentinula edodes (LED)' },
-  { prefix: 'POS', label: 'Pleurotus ostreatus (POS)' },
-  { prefix: 'PCI', label: 'Pleurotus citrinopileatus (PCI)' },
-  { prefix: 'PDJ', label: 'Pleurotus djamor (PDJ)' },
-  { prefix: 'PCU', label: 'Psilocybe cubensis (PCU)' },
-  { prefix: 'PCY', label: 'Panaeolus cyanescens (PCY)' },
-  { prefix: 'HER-T', label: 'Hericium erinaceus (thermophilic) (HER-T)' },
-  { prefix: 'PUL', label: 'Pleurotus pulmonarius (PUL)' },
-  { prefix: 'PST', label: 'Panellus stipticus (PST)' },
-  { prefix: 'PSM', label: 'Psilocybe mexicana (PSM)' },
-];
 
 @Injectable({
   providedIn: 'root',

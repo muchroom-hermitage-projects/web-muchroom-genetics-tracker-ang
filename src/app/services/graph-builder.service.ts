@@ -59,9 +59,10 @@ export class GraphBuilderService {
         selector: 'node',
         style: {
           label: 'data(label)',
-          width: '40px',
-          height: '40px',
+          width: '60px',
+          height: '60px',
           'font-size': '10px',
+          'font-weight': 'bold',
           'text-valign': 'bottom',
           'text-halign': 'center',
           'text-margin-y': '5px',
@@ -175,7 +176,9 @@ export class GraphBuilderService {
           'curve-style': 'bezier',
           label: 'data(label)',
           'font-size': '12px',
+          'font-weight': 'bold',
           'text-rotation': 'autorotate',
+          color: '#fff',
         },
       },
       {
