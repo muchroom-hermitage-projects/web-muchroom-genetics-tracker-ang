@@ -63,14 +63,11 @@ export class FilterPanelComponent implements OnInit {
   });
 
   constructor() {
-    effect(
-      () => {
-        this.cultureService.updateFilters(
-          this.filterValues() as Partial<FilterOptions>,
-        );
-      },
-      { allowSignalWrites: true },
-    );
+    effect(() => {
+      this.cultureService.updateFilters(
+        this.filterValues() as Partial<FilterOptions>,
+      );
+    });
   }
 
   ngOnInit(): void {
