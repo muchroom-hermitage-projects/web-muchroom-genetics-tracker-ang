@@ -178,6 +178,7 @@ describe('GenealogyGraphComponent', () => {
   });
 
   it('swallows highlight path errors without throwing', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const badNode = {
       addClass: vi.fn(),
       incomers: vi.fn(() => {
@@ -192,6 +193,7 @@ describe('GenealogyGraphComponent', () => {
     };
 
     expect(() => (component as any).highlightNode('selected')).not.toThrow();
+    warnSpy.mockRestore();
   });
 
   it('moves descendants during drag when subtree mode is enabled', () => {
