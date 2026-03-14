@@ -21,6 +21,11 @@ import {
 } from '../models/culture.model';
 import { v4 as uuidv4 } from 'uuid';
 import { STRAIN_FAMILY_OPTIONS, StrainOption } from '../models/strains.model';
+import {
+  culturesExample,
+  relationshipsExample,
+  strainsExample,
+} from '../../assets/documents/example-culture-data';
 
 export interface FilterOptions {
   strain: string;
@@ -89,9 +94,11 @@ export class CultureService {
 
   constructor() {
     const loaded = this.loadFromStorage();
+    // TODO: Remove when done testing.
     if (!loaded) {
       this.loadSampleData();
     }
+    // END TODO
     this.setupAutoPersistence();
   }
 
@@ -463,7 +470,6 @@ export class CultureService {
     this.relationships.set(current.filter((r) => r.id !== id));
   }
 
-  // Relationship queries
   getChildren(parentId: string): Culture[] {
     const rels = this.relationships();
     const childIds = rels
@@ -521,12 +527,11 @@ export class CultureService {
 
     return descendants;
   }
-  // Selection management
+
   setSelectedNode(nodeId: string | null): void {
     this.selectedNodeId.set(nodeId);
   }
 
-  // Archive/restore
   archiveCulture(id: string): void {
     this.updateCulture(id, {
       metadata: {
@@ -545,238 +550,11 @@ export class CultureService {
     });
   }
 
-  // Sample data loader
+  // TODO: Remove when done testing.
   private loadSampleData(): void {
-    // Sample strains
-    const strains: Strain[] = [
-      {
-        id: 'LED',
-        species: 'Lentinula edodes',
-        commonName: 'Shiitake',
-        source: 'Catalog',
-        dateAcquired: new Date('2024-01-01'),
-        notes: 'Default strain family option',
-      },
-      {
-        id: 'POS',
-        species: 'Pleurotus ostreatus',
-        commonName: 'Oyster',
-        source: 'Catalog',
-        dateAcquired: new Date('2024-01-15'),
-        notes: 'Default strain family option',
-      },
-      {
-        id: 'PCI',
-        species: 'Pleurotus citrinopileatus',
-        commonName: 'Golden Oyster',
-        source: 'Catalog',
-        dateAcquired: new Date('2024-01-01'),
-        notes: 'Default strain family option',
-      },
-      {
-        id: 'PDJ',
-        species: 'Pleurotus djamor',
-        commonName: 'Pink Oyster',
-        source: 'Catalog',
-        dateAcquired: new Date('2024-01-01'),
-        notes: 'Default strain family option',
-      },
-      {
-        id: 'PCU',
-        species: 'Psilocybe cubensis',
-        commonName: 'Cubensis',
-        source: 'Catalog',
-        dateAcquired: new Date('2024-01-01'),
-        notes: 'Default strain family option',
-      },
-      {
-        id: 'PCY',
-        species: 'Panaeolus cyanescens',
-        commonName: 'Pan Cyan',
-        source: 'Catalog',
-        dateAcquired: new Date('2024-03-20'),
-        notes: 'Default strain family option',
-      },
-      {
-        id: 'HER-T',
-        species: 'Hericium erinaceus (thermophilic)',
-        commonName: "Lion's Mane",
-        source: 'Catalog',
-        dateAcquired: new Date('2024-01-01'),
-        notes: 'Default strain family option',
-      },
-      {
-        id: 'PUL',
-        species: 'Pleurotus pulmonarius',
-        commonName: 'Phoenix Oyster',
-        source: 'Catalog',
-        dateAcquired: new Date('2024-01-01'),
-        notes: 'Default strain family option',
-      },
-      {
-        id: 'PST',
-        species: 'Panellus stipticus',
-        commonName: 'Bitter Oyster',
-        source: 'Catalog',
-        dateAcquired: new Date('2024-01-01'),
-        notes: 'Default strain family option',
-      },
-      {
-        id: 'PSM',
-        species: 'Psilocybe mexicana',
-        commonName: 'Mexicana',
-        source: 'Catalog',
-        dateAcquired: new Date('2024-01-01'),
-        notes: 'Default strain family option',
-      },
-    ];
-
-    // Sample cultures
-    const cultures: Culture[] = [
-      {
-        id: 'sp1',
-        label: 'POS-1 SP1',
-        type: CultureType.SPORE,
-        strain: 'POS-1',
-        strainSegment: 1,
-        filialGeneration: 'F0',
-        description: 'Original spore print from vendor',
-        dateCreated: new Date('2024-01-20'),
-        source: 'Vendor A',
-        notes: 'Dense print, dark purple',
-        metadata: { viability: 95, isArchived: false },
-      },
-      {
-        id: 'ag1',
-        label: 'POS-1 AG1',
-        type: CultureType.AGAR,
-        strain: 'POS-1',
-        strainSegment: 1,
-        filialGeneration: 'F0',
-        description: 'First isolation from SP1',
-        dateCreated: new Date('2024-01-25'),
-        notes: 'Rhizomorphic growth, clean',
-        metadata: { transferNumber: 1, isArchived: false },
-      },
-      {
-        id: 'ag1b',
-        label: 'POS-1 AG1B',
-        type: CultureType.AGAR,
-        strain: 'POS-1',
-        strainSegment: 1,
-        filialGeneration: 'F0-T1',
-        description: 'First transfer from AG1',
-        dateCreated: new Date('2024-02-01'),
-        notes: 'Sector selected for speed',
-        metadata: { transferNumber: 2, isArchived: false },
-      },
-      {
-        id: 'lc1',
-        label: 'POS-1 LC1',
-        type: CultureType.LIQUID_CULTURE,
-        strain: 'POS-1',
-        strainSegment: 1,
-        filialGeneration: 'F0',
-        description: 'Liquid culture from AG1B',
-        dateCreated: new Date('2024-02-05'),
-        notes: 'Honey 4%, clear',
-        metadata: { viability: 90, isArchived: false },
-      },
-      {
-        id: 'gr1',
-        label: 'POS-1 GR1',
-        type: CultureType.GRAIN_SPAWN,
-        strain: 'POS-1',
-        strainSegment: 1,
-        filialGeneration: 'F0',
-        description: 'Rye grain from LC1',
-        dateCreated: new Date('2024-02-10'),
-        notes: 'Colonized in 12 days',
-        metadata: { isArchived: false },
-      },
-      {
-        id: 'fb1',
-        label: 'POS-1 FB1',
-        type: CultureType.FRUIT,
-        strain: 'POS-1',
-        strainSegment: 1,
-        filialGeneration: 'F0',
-        description: 'First flush from GR1',
-        dateCreated: new Date('2024-03-01'),
-        notes: '150g, perfect clusters',
-        metadata: { isArchived: false },
-      },
-      {
-        id: 'cl1',
-        label: 'POS-1 CL1',
-        type: CultureType.CLONE,
-        strain: 'POS-1',
-        strainSegment: 1,
-        filialGeneration: 'F1',
-        description: 'Tissue clone from FB1',
-        dateCreated: new Date('2024-03-05'),
-        notes: 'Selected from largest fruit',
-        metadata: { cloneGeneration: 1, isArchived: false },
-      },
-      {
-        id: 'ag1c',
-        label: 'POS-1 AG1C',
-        type: CultureType.AGAR,
-        strain: 'POS-1',
-        strainSegment: 1,
-        filialGeneration: 'F1-T1',
-        description: 'First transfer from CL1',
-        dateCreated: new Date('2024-03-10'),
-        notes: 'Strong growth',
-        metadata: { transferNumber: 1, cloneGeneration: 1, isArchived: false },
-      },
-    ];
-
-    // Sample relationships
-    const relationships: Relationship[] = [
-      {
-        id: 'r1',
-        sourceId: 'sp1',
-        targetId: 'ag1',
-        type: RelationshipType.GERMINATION,
-      },
-      {
-        id: 'r2',
-        sourceId: 'ag1',
-        targetId: 'ag1b',
-        type: RelationshipType.TRANSFER,
-      },
-      {
-        id: 'r3',
-        sourceId: 'ag1b',
-        targetId: 'lc1',
-        type: RelationshipType.INOCULATION,
-      },
-      {
-        id: 'r4',
-        sourceId: 'lc1',
-        targetId: 'gr1',
-        type: RelationshipType.INOCULATION,
-      },
-      {
-        id: 'r5',
-        sourceId: 'gr1',
-        targetId: 'fb1',
-        type: RelationshipType.FRUITING,
-      },
-      {
-        id: 'r6',
-        sourceId: 'fb1',
-        targetId: 'cl1',
-        type: RelationshipType.CLONE_FROM_FRUIT,
-      },
-      {
-        id: 'r7',
-        sourceId: 'cl1',
-        targetId: 'ag1c',
-        type: RelationshipType.TRANSFER,
-      },
-    ];
+    const strains: Strain[] = strainsExample;
+    const cultures: Culture[] = culturesExample;
+    const relationships: Relationship[] = relationshipsExample;
 
     this.cultures.set(cultures);
     this.relationships.set(relationships);
