@@ -64,7 +64,6 @@ export class GraphBuilderService {
 
   getStylesheet(): cytoscape.CssStyleDeclaration[] {
     return [
-      // Node styles by type
       {
         selector: 'node',
         style: {
@@ -106,8 +105,8 @@ export class GraphBuilderService {
       {
         selector: 'node[type="liquid_culture"]',
         style: {
-          'background-color': '#ab47bc',
-          shape: 'diamond',
+          'background-color': '#ffecb7',
+          shape: 'round-rectangle',
         },
       },
       {
@@ -120,29 +119,29 @@ export class GraphBuilderService {
       {
         selector: 'node[type="fruit"]',
         style: {
-          'background-color': '#ef5350',
-          shape: 'ellipse',
+          'background-color': '#ffa6a6',
+          shape: 'round-rectangle',
         },
       },
       {
         selector: 'node[type="clone"]',
         style: {
-          'background-color': '#7e57c2',
-          shape: 'triangle',
+          'background-color': '#d2bbfa',
+          shape: 'round-rectangle',
         },
       },
       {
         selector: 'node[type="slant"]',
         style: {
-          'background-color': '#66bb6a',
-          shape: 'rectangle',
+          'background-color': '#a3fcff',
+          shape: 'round-rectangle',
         },
       },
       {
         selector: 'node[type="castellani_water"]',
         style: {
-          'background-color': '#26c6da',
-          shape: 'hexagon',
+          'background-color': '#ffdcb9',
+          shape: 'round-rectangle',
         },
       },
 
@@ -299,6 +298,26 @@ export class GraphBuilderService {
   }
 
   private getIconUrl(iconKey: string): string {
-    return `assets/icons/${iconKey}.svg`;
+    // TODO: Refactor when done testing
+    switch (iconKey) {
+      case CULTURE_TYPE_ICON_KEY.spore:
+        return `assets/icons/${iconKey}/${iconKey}3.png`;
+      case CULTURE_TYPE_ICON_KEY.agar:
+        return `assets/icons/${iconKey}/${iconKey}3.png`;
+      case CULTURE_TYPE_ICON_KEY.liquid_culture:
+        return `assets/icons/${iconKey}/${iconKey}4.png`;
+      case CULTURE_TYPE_ICON_KEY.grain_spawn:
+        return `assets/icons/${iconKey}/${iconKey}2.png`;
+      case CULTURE_TYPE_ICON_KEY.fruit:
+        return `assets/icons/${iconKey}/${iconKey}2.png`;
+      case CULTURE_TYPE_ICON_KEY.clone:
+        return `assets/icons/${iconKey}/${iconKey}2.png`;
+      case CULTURE_TYPE_ICON_KEY.slant:
+        return `assets/icons/${iconKey}/${iconKey}2.png`;
+      case CULTURE_TYPE_ICON_KEY.castellani_water:
+        return `assets/icons/${iconKey}/${iconKey}2.png`;
+      default:
+        return `assets/icons/${iconKey}/${iconKey}.svg`;
+    }
   }
 }
