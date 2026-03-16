@@ -299,26 +299,6 @@ export class GraphBuilderService {
   }
 
   private getIconUrl(iconKey: string): string {
-    // TODO: Refactor when done testing
-    switch (iconKey) {
-      case CULTURE_TYPE_ICON_KEY.spore:
-        return `assets/icons/${iconKey}/${iconKey}3.png`;
-      case CULTURE_TYPE_ICON_KEY.agar:
-        return `assets/icons/${iconKey}/${iconKey}3.png`;
-      case CULTURE_TYPE_ICON_KEY.liquid_culture:
-        return `assets/icons/${iconKey}/${iconKey}4.png`;
-      case CULTURE_TYPE_ICON_KEY.grain_spawn:
-        return `assets/icons/${iconKey}/${iconKey}2.png`;
-      case CULTURE_TYPE_ICON_KEY.fruit:
-        return `assets/icons/${iconKey}/${iconKey}2.png`;
-      case CULTURE_TYPE_ICON_KEY.clone:
-        return `assets/icons/${iconKey}/${iconKey}2.png`;
-      case CULTURE_TYPE_ICON_KEY.slant:
-        return `assets/icons/${iconKey}/${iconKey}2.png`;
-      case CULTURE_TYPE_ICON_KEY.castellani_water:
-        return `assets/icons/${iconKey}/${iconKey}2.png`;
-      default:
-        return `assets/icons/${iconKey}/${iconKey}.svg`;
-    }
+    return `assets/icons/${iconKey}/${iconKey}.png`;
   }
 }

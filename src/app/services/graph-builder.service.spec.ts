@@ -35,7 +35,7 @@ describe('GraphBuilderService', () => {
     expect(rootNode?.data?.isArchived).toBe(false);
     expect(rootNode?.data?.isContaminated).toBe(false);
     expect(rootNode?.data?.icon).toBe('agar');
-    expect(rootNode?.data?.iconUrl).toBe('assets/icons/agar.svg');
+    expect(rootNode?.data?.iconUrl).toBe('assets/icons/agar/agar.png');
 
     expect(archivedNode?.group).toBe('nodes');
     expect(archivedNode?.data?.label).toBe('Archived child (archived)');
@@ -50,7 +50,7 @@ describe('GraphBuilderService', () => {
     expect(transferEdge?.data?.label).toBe('transfer');
 
     expect(customEdge?.data?.relation).toBe('custom_relation');
-    expect(customEdge?.data?.label).toBe('custom_relation');
+    expect(customEdge?.data?.label).toBe('custom relation');
   });
 
   it('maps known relationship labels and falls back for unknown values', () => {
@@ -72,9 +72,11 @@ describe('GraphBuilderService', () => {
   });
 
   it('computes icon urls based on the icon key', () => {
-    expect((service as any).getIconUrl('agar')).toBe('assets/icons/agar.svg');
+    expect((service as any).getIconUrl('agar')).toBe(
+      'assets/icons/agar/agar.png',
+    );
     expect((service as any).getIconUrl('grain-spawn')).toBe(
-      'assets/icons/grain-spawn.svg',
+      'assets/icons/grain-spawn/grain-spawn.png',
     );
   });
 
