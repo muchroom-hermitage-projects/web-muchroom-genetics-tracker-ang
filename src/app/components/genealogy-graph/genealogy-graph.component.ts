@@ -135,16 +135,7 @@ export class GenealogyGraphComponent implements AfterViewInit, OnDestroy {
       container: this.cyContainer.nativeElement,
       elements: elements,
       style: this.graphBuilder.getStylesheet(),
-      layout: {
-        name: 'dagre',
-        // These are dagre-specific options that work in the initial layout
-        nodeSep: 50,
-        edgeSep: 20,
-        rankSep: 50,
-        rankDir: 'TB',
-        ranker: 'network-simplex',
-        animate: false,
-      } as any,
+      layout: this.initialLayout,
       userZoomingEnabled: true,
       userPanningEnabled: true,
       boxSelectionEnabled: false,
@@ -293,20 +284,9 @@ export class GenealogyGraphComponent implements AfterViewInit, OnDestroy {
     this.cy.elements().remove();
     this.cy.add(elements);
 
-    // Fixed: Use the correct approach for applying layout after initialization
-    const layout = this.cy.layout({
-      name: 'dagre',
-      // These options work in the layout method as well
-      nodeSep: 50,
-      edgeSep: 20,
-      rankSep: 50,
-      rankDir: 'TB',
-      animate: true,
-      animationDuration: 500,
-      // Add these to improve tree layout
-      spacingFactor: 1.5,
-      nodeDimensionsIncludeLabels: true,
-    } as any); // Use type assertion to bypass TypeScript's strict checking
+    // Fixed: Use the correct approach for applying initialLayout after initialization
+    // Use type assertion to bypass TypeScript's strict checking
+    const layout = this.cy.layout(this.initialLayout);
 
     layout.run();
   }
@@ -399,18 +379,8 @@ export class GenealogyGraphComponent implements AfterViewInit, OnDestroy {
   }
 
   resetLayout(): void {
-    // Fixed: Use type assertion for layout options
-    const layout = this.cy.layout({
-      name: 'dagre',
-      nodeSep: 50,
-      edgeSep: 20,
-      rankSep: 50,
-      rankDir: 'TB',
-      animate: true,
-      animationDuration: 500,
-      spacingFactor: 1.5,
-      nodeDimensionsIncludeLabels: true,
-    } as any);
+    // Fixed: Use type assertion for initialLayout options
+    const layout = this.cy.layout(this.initialLayout);
 
     layout.run();
   }
