@@ -54,7 +54,7 @@ export class GraphBuilderService {
         source: rel.sourceId,
         target: rel.targetId,
         relation: rel.type,
-        label: this.getRelationshipLabel(rel.type),
+        label: rel.type.replace(/_/g, ' '),
       },
       group: 'edges',
     }));
@@ -209,7 +209,7 @@ export class GraphBuilderService {
         },
       },
       {
-        selector: 'edge[relation="fruit_to_spore"]',
+        selector: 'edge[relation="collecting_spores"]',
         style: {
           'line-color': '#ef5350',
           'target-arrow-color': '#ef5350',
@@ -293,6 +293,7 @@ export class GraphBuilderService {
       collecting_spores: 'collecting spores',
       inoculation: 'inoculation',
       fruiting: 'fruiting',
+      expansion: 'expansion',
     };
     return labels[type] || type;
   }

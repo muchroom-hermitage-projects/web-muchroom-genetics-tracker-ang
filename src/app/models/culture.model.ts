@@ -77,11 +77,12 @@ export interface Relationship {
 export enum RelationshipType {
   GERMINATION = 'germination',
   TRANSFER = 'transfer',
-  CLONE_FROM_FRUIT = 'clone from fruit',
+  CLONE_FROM_FRUIT = 'clone_from_fruit',
   INOCULATION = 'inoculation', // LC to grain, etc.
   FRUITING = 'fruiting', // grain to fruit
-  COLLECTING_SPORES = 'collecting spores',
+  COLLECTING_SPORES = 'collecting_spores',
   EXPANSION = 'expansion',
+  LONG_TERM_STORAGE = 'long_term_storage',
 }
 
 export interface Strain {

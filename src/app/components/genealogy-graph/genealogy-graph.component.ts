@@ -16,7 +16,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import cytoscape from 'cytoscape';
+import cytoscape, { LayoutOptions } from 'cytoscape';
 import dagre from 'cytoscape-dagre';
 
 import { CultureService } from '../../services/culture.service';
@@ -48,6 +48,17 @@ export class GenealogyGraphComponent implements AfterViewInit, OnDestroy {
   private readonly cultureService = inject(CultureService);
   private readonly graphBuilder = inject(GraphBuilderService);
   private readonly dialog = inject(MatDialog);
+  private readonly initialLayout = {
+    name: 'dagre',
+    nodeSep: 50,
+    edgeSep: 20,
+    rankSep: 50,
+    rankDir: 'TB',
+    animate: true,
+    animationDuration: 500,
+    spacingFactor: 1.5,
+    nodeDimensionsIncludeLabels: true,
+  } as LayoutOptions;
 
   private readonly filteredCulturesSignal = toSignal(
     this.cultureService.getFilteredCultures(),
