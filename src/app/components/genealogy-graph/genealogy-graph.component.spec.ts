@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import cytoscape from 'cytoscape';
 import { GenealogyGraphComponent } from './genealogy-graph.component';
 import { CultureService } from '../../services/culture.service';
 import { GraphBuilderService } from '../../services/graph-builder.service';
@@ -17,6 +18,41 @@ import {
   GENEALOGY_VISIBLE_RELATIONSHIPS,
   SAMPLE_CULTURE,
 } from '../../../testing/mocks';
+
+vi.mock('cytoscape-navigator', () => ({
+  default: vi.fn(),
+}));
+
+vi.mock('cytoscape-dagre', () => ({
+  default: {},
+}));
+
+vi.mock('cytoscape', () => {
+  const mockCyInstance = {
+    navigator: vi.fn(),
+    on: vi.fn(),
+    elements: vi
+      .fn()
+      .mockReturnValue({ remove: vi.fn(), removeClass: vi.fn() }),
+    add: vi.fn(),
+    layout: vi.fn().mockReturnValue({ run: vi.fn() }),
+    fit: vi.fn(),
+    destroy: vi.fn(),
+    getElementById: vi.fn().mockReturnValue({
+      addClass: vi.fn(),
+      incomers: vi.fn().mockReturnValue([]),
+    }),
+  };
+
+  const mockCytoscape = vi.fn(() => mockCyInstance);
+  (mockCytoscape as any).use = vi.fn();
+  (mockCytoscape as any).__mockCyInstance = mockCyInstance;
+
+  return {
+    __esModule: true,
+    default: mockCytoscape,
+  };
+});
 
 class MockCultureService {
   private readonly filteredCultures$ = new BehaviorSubject<Culture[]>([]);
@@ -89,6 +125,7 @@ describe('GenealogyGraphComponent', () => {
   let dialogSpy: DialogSpy;
 
   beforeEach(async () => {
+    vi.clearAllMocks();
     dialogSpy = new DialogSpy();
 
     await TestBed.configureTestingModule({
@@ -126,6 +163,25 @@ describe('GenealogyGraphComponent', () => {
 
     const visible = (component as any).getVisibleRelationships();
     expect(visible).toEqual([GENEALOGY_VISIBLE_RELATIONSHIPS[0]]);
+  });
+
+  it('initializes the minimap with the custom container', () => {
+    const cyInstance = (cytoscape as any).__mockCyInstance;
+
+    expect(cyInstance.navigator).toHaveBeenCalledWith(
+      expect.objectContaining({
+        container: '#cyNavigator',
+        viewLiveFramerate: 0,
+        dblClickDelay: 200,
+        removeCustomContainer: false,
+      }),
+    );
+  });
+
+  it('renders a navigator container in the template', () => {
+    const navigatorEl = fixture.nativeElement.querySelector('#cyNavigator');
+
+    expect(navigatorEl).toBeTruthy();
   });
 
   it('updates subtree mode label and tooltip when signal changes', () => {
