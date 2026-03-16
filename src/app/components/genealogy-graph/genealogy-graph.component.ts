@@ -17,6 +17,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import cytoscape, { LayoutOptions } from 'cytoscape';
+import navigator from 'cytoscape-navigator';
 import dagre from 'cytoscape-dagre';
 
 import { CultureService } from '../../services/culture.service';
@@ -27,6 +28,7 @@ import { NodeModalComponent } from '../node-modal/node-modal.component';
 // Register dagre layout
 if (cytoscape && typeof cytoscape.use === 'function') {
   cytoscape.use(dagre);
+  navigator(cytoscape);
 }
 
 const E2E_CY_HANDLE = '__GENETICS_GRAPH_CY__';
@@ -143,6 +145,13 @@ export class GenealogyGraphComponent implements AfterViewInit, OnDestroy {
       autounselectify: false,
     });
     this.exposeCyForE2E();
+
+    this.cy.navigator({
+      container: '#cyNavigator',
+      viewLiveFramerate: 0,
+      dblClickDelay: 200,
+      removeCustomContainer: false,
+    });
 
     // Node click handler
     this.cy.on('tap', 'node', (event) => {
