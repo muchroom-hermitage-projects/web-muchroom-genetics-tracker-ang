@@ -39,6 +39,9 @@
 - Add buttons to zoom in/out the graph, and add indicator to the UI showing the current zoom level (e.g. 100%, 150%, etc.)
 - Refactor navbar menu (currently in app.component), to a separate component
 - tree "minimap"
+- Add option to define own relation styles (color, thickness, dashed/solid), and save them in localStorage
+- Add option to define own node styles (color, shape, size), and save them in localStorage
+- Add option to define background color, and save it in localStorage
 
 # Project structure:
 
