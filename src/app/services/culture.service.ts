@@ -26,6 +26,7 @@ import {
   relationshipsExample,
   strainsExample,
 } from '../../assets/documents/example-culture-data';
+import { environment } from '../../environments/environment';
 
 export interface FilterOptions {
   strain: string;
@@ -95,7 +96,7 @@ export class CultureService {
   constructor() {
     const loaded = this.loadFromStorage();
     // TODO: Remove when done testing.
-    if (!loaded) {
+    if (!loaded && !environment.production) {
       this.loadSampleData();
     }
     // END TODO
