@@ -310,13 +310,3 @@ All services use `providedIn: 'root'` for tree-shaking. Use `inject()` helper, n
 3. Do not add Cytoscape logic outside GenealogyGraphComponent or GraphBuilderService.
 4. Do not introduce RxJS Subjects for application state.
 
-## Future Major Features (from TODO.md)
-
-- [ ] Contamination UI (red background for contaminated cultures + children)
-- [ ] Auto-derive relationship types from source/target culture types
-- [ ] Multiple named "saved states" (structure + data snapshots)
-- [ ] Graph zoom in/out controls + minimap
-- [ ] Data testid attributes for all UI elements (a11y + E2E robustness)
-- [ ] Migration to Nx monorepo (for Electron + mobile versions)
-- [ ] Robust logging service
-
