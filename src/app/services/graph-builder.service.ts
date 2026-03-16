@@ -75,7 +75,7 @@ export class GraphBuilderService {
           'text-valign': 'bottom',
           'text-halign': 'center',
           'text-margin-y': '5px',
-          'background-color': '#9e9e9e',
+          'background-color': '#c4edff',
           'border-width': '2px',
           'border-color': '#ffffff',
           'background-image': 'data(iconUrl)',
@@ -91,56 +91,49 @@ export class GraphBuilderService {
       {
         selector: 'node[type="spore"]',
         style: {
-          'background-color': '#8bc34a',
-          shape: 'ellipse',
+          'background-color': '#c4edff',
+          shape: 'round-rectangle',
         },
       },
       {
         selector: 'node[type="agar"]',
         style: {
-          'background-color': '#42a5f5',
           shape: 'round-rectangle',
         },
       },
       {
         selector: 'node[type="liquid_culture"]',
         style: {
-          'background-color': '#ffecb7',
           shape: 'round-rectangle',
         },
       },
       {
         selector: 'node[type="grain_spawn"]',
         style: {
-          'background-color': '#ffa726',
           shape: 'round-rectangle',
         },
       },
       {
         selector: 'node[type="fruit"]',
         style: {
-          'background-color': '#ffa6a6',
           shape: 'round-rectangle',
         },
       },
       {
         selector: 'node[type="clone"]',
         style: {
-          'background-color': '#d2bbfa',
           shape: 'round-rectangle',
         },
       },
       {
         selector: 'node[type="slant"]',
         style: {
-          'background-color': '#a3fcff',
           shape: 'round-rectangle',
         },
       },
       {
         selector: 'node[type="castellani_water"]',
         style: {
-          'background-color': '#ffdcb9',
           shape: 'round-rectangle',
         },
       },
@@ -182,8 +175,8 @@ export class GraphBuilderService {
         selector: 'edge',
         style: {
           width: '14px',
-          'line-color': '#9e9e9e',
-          'target-arrow-color': '#9e9e9e',
+          'line-color': '#7c7c7c',
+          'target-arrow-color': '#7c7c7c',
           'target-arrow-shape': 'triangle',
           'curve-style': 'bezier',
           label: 'data(label)',
@@ -205,7 +198,6 @@ export class GraphBuilderService {
         style: {
           'line-color': '#7e57c2',
           'target-arrow-color': '#7e57c2',
-          'line-style': 'dotted',
         },
       },
       {
@@ -213,7 +205,6 @@ export class GraphBuilderService {
         style: {
           'line-color': '#ef5350',
           'target-arrow-color': '#ef5350',
-          'line-style': 'dotted',
         },
       },
 
