@@ -4,6 +4,7 @@ import {
   GRAPH_BUILDER_MOCK_CULTURES,
   GRAPH_BUILDER_MOCK_RELATIONSHIPS,
 } from '../../testing/mocks';
+import { RelationshipType } from '../models/culture.model';
 
 describe('GraphBuilderService', () => {
   let service: GraphBuilderService;
@@ -53,22 +54,20 @@ describe('GraphBuilderService', () => {
     expect(customEdge?.data?.label).toBe('custom relation');
   });
 
-  it('maps known relationship labels and falls back for unknown values', () => {
-    expect((service as any).getRelationshipLabel('germination')).toBe(
-      'germination',
-    );
-    expect((service as any).getRelationshipLabel('transfer')).toBe('transfer');
-    expect((service as any).getRelationshipLabel('clone_from_fruit')).toBe(
-      'tissue cloning',
-    );
-    expect((service as any).getRelationshipLabel('collecting_spores')).toBe(
-      'collecting spores',
-    );
-    expect((service as any).getRelationshipLabel('inoculation')).toBe(
-      'inoculation',
-    );
-    expect((service as any).getRelationshipLabel('fruiting')).toBe('fruiting');
-    expect((service as any).getRelationshipLabel('unmapped')).toBe('unmapped');
+  it('replaces underscores in relationship labels', () => {
+    const elements = service.buildElements(GRAPH_BUILDER_MOCK_CULTURES, [
+      {
+        id: 'r3',
+        sourceId: 'c1',
+        targetId: 'c2',
+        type: RelationshipType.CLONE_FROM_FRUIT,
+      },
+    ]);
+
+    const edge = elements.find((e) => e.data?.id === 'r3');
+
+    expect(edge?.data?.relation).toBe('clone_from_fruit');
+    expect(edge?.data?.label).toBe('clone from fruit');
   });
 
   it('computes icon urls based on the icon key', () => {
