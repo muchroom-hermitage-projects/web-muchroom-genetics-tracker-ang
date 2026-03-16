@@ -11,6 +11,6 @@ dist/
 build/
 out/
 
-excluded-ai-rules/
+.aiexcluded/
 
 TODO.md
