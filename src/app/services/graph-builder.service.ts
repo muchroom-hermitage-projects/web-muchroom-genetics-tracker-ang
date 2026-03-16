@@ -276,19 +276,6 @@ export class GraphBuilderService {
     ];
   }
 
-  private getRelationshipLabel(type: string): string {
-    const labels: Record<string, string> = {
-      germination: 'germination',
-      transfer: 'transfer',
-      clone_from_fruit: 'tissue cloning',
-      collecting_spores: 'collecting spores',
-      inoculation: 'inoculation',
-      fruiting: 'fruiting',
-      expansion: 'expansion',
-    };
-    return labels[type] || type;
-  }
-
   private getIconUrl(iconKey: string): string {
     return `assets/icons/${iconKey}/${iconKey}.png`;
   }
