@@ -20,7 +20,6 @@
 
 - Adding options to rename relations
 - Adding option to add/remove relations (under the hood relations have uuids assigned to them)
-- Relation
 - Add option to rename species
 - Adding option to add/remove mushroom species
 - Add option to add new localStorage keys
