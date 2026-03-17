@@ -1,7 +1,7 @@
 // services/graph-builder.service.ts
 import { Injectable } from '@angular/core';
 import { Culture, Relationship, CultureType } from '../models/culture.model';
-import * as cytoscape from 'cytoscape';
+import cytoscape from 'cytoscape';
 
 const CULTURE_TYPE_ICON_KEY: Record<CultureType, string> = {
   [CultureType.SPORE]: 'spore',
@@ -34,6 +34,7 @@ export class GraphBuilderService {
           label: displayLabel,
           icon: CULTURE_TYPE_ICON_KEY[culture.type],
           iconUrl: this.getIconUrl(CULTURE_TYPE_ICON_KEY[culture.type]),
+          nodeType: 'culture',
           type: culture.type,
           strain: culture.strain,
           filial: culture.filialGeneration,

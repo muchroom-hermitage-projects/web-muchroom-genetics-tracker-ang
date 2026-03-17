@@ -177,6 +177,58 @@ describe('CultureService', () => {
     expect(getRelationshipsState().map((rel) => rel.id)).toEqual(['rel2']);
   });
 
+  it('deletes a culture tree including descendants and related relationships', () => {
+    setState({
+      cultures: CULTURE_SERVICE_TREE_CULTURES,
+      relationships: CULTURE_SERVICE_TREE_RELATIONSHIPS,
+    });
+
+    service.deleteCultureTree('childA');
+
+    expect(getCulturesState().map((culture) => culture.id)).toEqual([
+      'root',
+      'childB',
+    ]);
+    expect(getRelationshipsState().map((rel) => rel.id)).toEqual(['rel2']);
+  });
+
+  it('ignores deleteCultureTree calls for missing or empty ids', () => {
+    setState({
+      cultures: CULTURE_SERVICE_TREE_CULTURES,
+      relationships: CULTURE_SERVICE_TREE_RELATIONSHIPS,
+    });
+
+    const originalCultures = getCulturesState();
+    const originalRelationships = getRelationshipsState();
+
+    service.deleteCultureTree('');
+    service.deleteCultureTree('missing');
+    service.deleteCultureTree(null as unknown as string);
+    service.deleteCultureTree(undefined as unknown as string);
+
+    expect(getCulturesState()).toEqual(originalCultures);
+    expect(getRelationshipsState()).toEqual(originalRelationships);
+  });
+
+  it('deletes only the target when no descendants exist', () => {
+    setState({
+      cultures: CULTURE_SERVICE_TREE_CULTURES,
+      relationships: CULTURE_SERVICE_TREE_RELATIONSHIPS,
+    });
+
+    service.deleteCultureTree('childB');
+
+    expect(getCulturesState().map((culture) => culture.id)).toEqual([
+      'root',
+      'childA',
+      'grandchild',
+    ]);
+    expect(getRelationshipsState().map((rel) => rel.id)).toEqual([
+      'rel1',
+      'rel3',
+    ]);
+  });
+
   it('performs relationship CRUD operations', () => {
     setState({ relationships: [] });
 

@@ -19,16 +19,23 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import cytoscape, { LayoutOptions } from 'cytoscape';
 import navigator from 'cytoscape-navigator';
 import dagre from 'cytoscape-dagre';
+import contextMenus from 'cytoscape-context-menus';
 
 import { CultureService } from '../../services/culture.service';
 import { GraphBuilderService } from '../../services/graph-builder.service';
 import { Culture, Relationship } from '../../models/culture.model';
 import { NodeModalComponent } from '../node-modal/node-modal.component';
+import {
+  CONTEXT_MENU_SELECTOR,
+  ContextMenuInstance,
+  CytoscapeWithContextMenus,
+} from '../../models/context-menu.models';
 
 // Register dagre layout
 if (cytoscape && typeof cytoscape.use === 'function') {
   cytoscape.use(dagre);
   navigator(cytoscape);
+  contextMenus(cytoscape);
 }
 
 const E2E_CY_HANDLE = '__GENETICS_GRAPH_CY__';
@@ -66,6 +73,7 @@ export class GenealogyGraphComponent implements AfterViewInit, OnDestroy {
     this.cultureService.getFilteredCultures(),
     { initialValue: [] as Culture[] },
   );
+  readonly cultures = this.filteredCulturesSignal;
   private readonly relationshipsSignal = toSignal(
     this.cultureService.getRelationships(),
     { initialValue: [] as Relationship[] },
@@ -78,8 +86,7 @@ export class GenealogyGraphComponent implements AfterViewInit, OnDestroy {
   @ViewChild('cyContainer') cyContainer!: ElementRef;
 
   private cy!: cytoscape.Core;
-  cultures: Culture[] = [];
-  private relationships: Relationship[] = [];
+  private contextMenu?: ContextMenuInstance;
   readonly subtreeMode = signal(true);
   readonly subtreeModeLabel = computed(() =>
     this.subtreeMode() ? 'Subtree Mode' : 'Cascade Drag',
@@ -92,12 +99,9 @@ export class GenealogyGraphComponent implements AfterViewInit, OnDestroy {
 
   constructor() {
     effect(() => {
-      this.cultures = this.filteredCulturesSignal();
-      this.refreshGraph();
-    });
-    effect(() => {
-      this.relationships = this.relationshipsSignal();
-      this.refreshGraph();
+      const cultures = this.cultures();
+      const relationships = this.relationshipsSignal();
+      this.refreshGraph(cultures, relationships);
     });
     effect(() => {
       const selectedNodeId = this.selectedNodeIdSignal();
@@ -113,12 +117,25 @@ export class GenealogyGraphComponent implements AfterViewInit, OnDestroy {
     if (this.cy) {
       this.cy.destroy();
     }
+    if (this.contextMenu) {
+      this.contextMenu.destroy();
+    }
     this.clearE2EHandle();
   }
 
   private getVisibleRelationships(): Relationship[] {
-    const visibleNodeIds = new Set(this.cultures.map((c) => c.id));
-    return this.relationships.filter(
+    return this.getVisibleRelationshipsFor(
+      this.cultures(),
+      this.relationshipsSignal(),
+    );
+  }
+
+  private getVisibleRelationshipsFor(
+    cultures: Culture[],
+    relationships: Relationship[],
+  ): Relationship[] {
+    const visibleNodeIds = new Set(cultures.map((c) => c.id));
+    return relationships.filter(
       (r) => visibleNodeIds.has(r.sourceId) && visibleNodeIds.has(r.targetId),
     );
   }
@@ -128,9 +145,11 @@ export class GenealogyGraphComponent implements AfterViewInit, OnDestroy {
       return;
     }
 
+    const cultures = this.cultures();
+    const relationships = this.relationshipsSignal();
     const elements = this.graphBuilder.buildElements(
-      this.cultures,
-      this.getVisibleRelationships(),
+      cultures,
+      this.getVisibleRelationshipsFor(cultures, relationships),
     );
 
     this.cy = cytoscape({
@@ -152,8 +171,8 @@ export class GenealogyGraphComponent implements AfterViewInit, OnDestroy {
       dblClickDelay: 200,
       removeCustomContainer: false,
     });
+    this.initContextMenu();
 
-    // Node click handler
     this.cy.on('tap', 'node', (event) => {
       const node = event.target;
       const mouseEvent = event.originalEvent as MouseEvent | undefined;
@@ -165,20 +184,17 @@ export class GenealogyGraphComponent implements AfterViewInit, OnDestroy {
       }
     });
 
-    // Background click clears selection
     this.cy.on('tap', (event) => {
       if (event.target === this.cy) {
         this.cultureService.setSelectedNode(null);
       }
     });
 
-    // Edge click handler
     this.cy.on('tap', 'edge', (event) => {
       const edge = event.target;
       // console.log('Edge clicked:', edge.data());
     });
 
-    // Recursive subtree dragging
     this.setupRecursiveSubtreeDragging();
   }
 
@@ -192,10 +208,8 @@ export class GenealogyGraphComponent implements AfterViewInit, OnDestroy {
       draggedNodeId = draggedNode.id();
       dragStartPositions = new Map();
 
-      // Get all descendants recursively
       const descendants = this.getDescendants(draggedNode);
 
-      // Store initial positions of dragged node and all descendants
       dragStartPositions.set(draggedNode.id(), {
         x: draggedNode.position('x'),
         y: draggedNode.position('y'),
@@ -246,9 +260,6 @@ export class GenealogyGraphComponent implements AfterViewInit, OnDestroy {
       const draggedNode = event.target;
       if (draggedNode.id() !== draggedNodeId) return;
 
-      // Positions are already updated by Cytoscape and our drag handler
-      // Relative distances are maintained
-
       // Clear drag state
       dragStartPositions = null;
       draggedNodeId = null;
@@ -283,12 +294,15 @@ export class GenealogyGraphComponent implements AfterViewInit, OnDestroy {
     return descendants;
   }
 
-  private refreshGraph(): void {
+  private refreshGraph(
+    cultures: Culture[],
+    relationships: Relationship[],
+  ): void {
     if (!this.cy) return;
 
     const elements = this.graphBuilder.buildElements(
-      this.cultures,
-      this.getVisibleRelationships(),
+      cultures,
+      this.getVisibleRelationshipsFor(cultures, relationships),
     );
     this.cy.elements().remove();
     this.cy.add(elements);
@@ -337,7 +351,7 @@ export class GenealogyGraphComponent implements AfterViewInit, OnDestroy {
   }
 
   private openEditCultureModal(nodeId: string): void {
-    const culture = this.cultures.find((c) => c.id === nodeId);
+    const culture = this.cultures().find((c) => c.id === nodeId);
     if (!culture) {
       return;
     }
@@ -363,6 +377,157 @@ export class GenealogyGraphComponent implements AfterViewInit, OnDestroy {
       }
 
       this.cultureService.updateCulture(culture.id, result.updates);
+    });
+  }
+
+  private openAddChildModal(parentId: string): void {
+    this.dialog.open(NodeModalComponent, {
+      width: '500px',
+      data: { parentId },
+    });
+  }
+
+  private initContextMenu(): void {
+    const core = this.cy as CytoscapeWithContextMenus;
+    if (!core.contextMenus) {
+      return;
+    }
+
+    this.contextMenu?.destroy();
+
+    this.contextMenu = core.contextMenus({
+      menuItems: [
+        {
+          id: 'details',
+          content: 'Details',
+          selector: CONTEXT_MENU_SELECTOR,
+          onClickFunction: (event) => {
+            this.openEditCultureModal(event.target.id());
+          },
+        },
+        {
+          id: 'add-child',
+          content: 'Add child',
+          selector: CONTEXT_MENU_SELECTOR,
+          onClickFunction: (event) => {
+            this.openAddChildModal(event.target.id());
+          },
+        },
+        {
+          id: 'remove-node',
+          content: 'Remove node',
+          selector: CONTEXT_MENU_SELECTOR,
+          onClickFunction: (event) => {
+            this.handleRemoveNode(event.target.id());
+          },
+        },
+        {
+          id: 'archive',
+          content: 'Archive',
+          selector: CONTEXT_MENU_SELECTOR,
+          onClickFunction: (event) => {
+            this.setArchiveState(event.target.id(), true);
+          },
+        },
+        {
+          id: 'restore',
+          content: 'Restore',
+          selector: CONTEXT_MENU_SELECTOR,
+          show: false,
+          onClickFunction: (event) => {
+            this.setArchiveState(event.target.id(), false);
+          },
+        },
+        {
+          id: 'contaminated',
+          content: 'Contaminated',
+          selector: CONTEXT_MENU_SELECTOR,
+          onClickFunction: (event) => {
+            this.setContaminationState(event.target.id(), true);
+          },
+        },
+        {
+          id: 'clean',
+          content: 'Clean',
+          selector: CONTEXT_MENU_SELECTOR,
+          show: false,
+          onClickFunction: (event) => {
+            this.setContaminationState(event.target.id(), false);
+          },
+        },
+      ],
+    });
+
+    this.cy.on('cxttapstart', CONTEXT_MENU_SELECTOR, (event) => {
+      this.updateContextMenuVisibility(event.target);
+    });
+  }
+
+  private updateContextMenuVisibility(node: cytoscape.NodeSingular): void {
+    if (!this.contextMenu) {
+      return;
+    }
+
+    const culture = this.cultures().find((item) => item.id === node.id());
+    const isArchived = culture?.metadata?.isArchived ?? false;
+    const isContaminated = culture?.metadata?.isContaminated ?? false;
+
+    if (isArchived) {
+      this.contextMenu.showMenuItem('restore');
+      this.contextMenu.hideMenuItem('archive');
+    } else {
+      this.contextMenu.showMenuItem('archive');
+      this.contextMenu.hideMenuItem('restore');
+    }
+
+    if (isContaminated) {
+      this.contextMenu.showMenuItem('clean');
+      this.contextMenu.hideMenuItem('contaminated');
+    } else {
+      this.contextMenu.showMenuItem('contaminated');
+      this.contextMenu.hideMenuItem('clean');
+    }
+  }
+
+  private handleRemoveNode(nodeId: string): void {
+    const descendants = this.cultureService.getDescendants(nodeId);
+    const hasDescendants = descendants.length > 0;
+    const message = hasDescendants
+      ? 'Remove node and all its children?'
+      : 'Are you sure?';
+
+    if (!confirm(message)) {
+      return;
+    }
+
+    if (hasDescendants) {
+      this.cultureService.deleteCultureTree(nodeId);
+    } else {
+      this.cultureService.deleteCulture(nodeId);
+    }
+    this.cultureService.setSelectedNode(null);
+  }
+
+  private setArchiveState(nodeId: string, isArchived: boolean): void {
+    if (isArchived) {
+      this.cultureService.archiveCulture(nodeId);
+      return;
+    }
+
+    this.cultureService.restoreCulture(nodeId);
+  }
+
+  private setContaminationState(nodeId: string, isContaminated: boolean): void {
+    const culture = this.cultures().find((item) => item.id === nodeId);
+    if (!culture) {
+      return;
+    }
+
+    this.cultureService.updateCulture(nodeId, {
+      metadata: {
+        ...culture.metadata,
+        isContaminated,
+      },
     });
   }
 

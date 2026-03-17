@@ -445,6 +445,35 @@ export class CultureService {
     );
   }
 
+  deleteCultureTree(nodeId: string | null | undefined): void {
+    if (!nodeId) {
+      return;
+    }
+
+    const cultures = this.cultures();
+    if (!cultures.some((culture) => culture.id === nodeId)) {
+      return;
+    }
+
+    const descendants = this.getDescendants(nodeId);
+    const idsToRemove = new Set<string>([
+      nodeId,
+      ...descendants.map((culture) => culture.id),
+    ]);
+
+    this.cultures.set(
+      cultures.filter((culture) => !idsToRemove.has(culture.id)),
+    );
+
+    const relationships = this.relationships();
+    this.relationships.set(
+      relationships.filter(
+        (rel) =>
+          !idsToRemove.has(rel.sourceId) && !idsToRemove.has(rel.targetId),
+      ),
+    );
+  }
+
   addRelationship(relationship: Omit<Relationship, 'id'>): Relationship {
     const newRelationship = {
       ...relationship,

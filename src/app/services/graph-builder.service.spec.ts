@@ -37,11 +37,13 @@ describe('GraphBuilderService', () => {
     expect(rootNode?.data?.isContaminated).toBe(false);
     expect(rootNode?.data?.icon).toBe('agar');
     expect(rootNode?.data?.iconUrl).toBe('assets/icons/agar/agar.png');
+    expect(rootNode?.data?.nodeType).toBe('culture');
 
     expect(archivedNode?.group).toBe('nodes');
     expect(archivedNode?.data?.label).toBe('Archived child (archived)');
     expect(archivedNode?.data?.isArchived).toBe(true);
     expect(archivedNode?.data?.isContaminated).toBe(true);
+    expect(archivedNode?.data?.nodeType).toBe('culture');
     expect(archivedNode?.data?.fullData).toEqual(
       GRAPH_BUILDER_MOCK_CULTURES[1],
     );
