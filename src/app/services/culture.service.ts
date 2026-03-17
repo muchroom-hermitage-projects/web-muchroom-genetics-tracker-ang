@@ -1,6 +1,15 @@
-// services/culture.service.ts
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, Subscription, combineLatest } from 'rxjs';
+import {
+  Injector,
+  Signal,
+  WritableSignal,
+  computed,
+  effect,
+  inject,
+  Injectable,
+  signal,
+} from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import {
   Culture,
@@ -11,6 +20,13 @@ import {
   getCultureTypeAbbreviation,
 } from '../models/culture.model';
 import { v4 as uuidv4 } from 'uuid';
+import { STRAIN_FAMILY_OPTIONS, StrainOption } from '../models/strains.model';
+import {
+  culturesExample,
+  relationshipsExample,
+  strainsExample,
+} from '../../assets/documents/example-culture-data';
+import { environment } from '../../environments/environment';
 
 export interface FilterOptions {
   strain: string;
@@ -31,34 +47,18 @@ export interface PersistedData {
   selectedNodeId: string | null;
 }
 
-export interface StrainOption {
-  prefix: string;
-  label: string;
-}
-
-const STRAIN_FAMILY_OPTIONS: StrainOption[] = [
-  { prefix: 'LED', label: 'Lentinula edodes (LED)' },
-  { prefix: 'POS', label: 'Pleurotus ostreatus (POS)' },
-  { prefix: 'PCI', label: 'Pleurotus citrinopileatus (PCI)' },
-  { prefix: 'PDJ', label: 'Pleurotus djamor (PDJ)' },
-  { prefix: 'PCU', label: 'Psilocybe cubensis (PCU)' },
-  { prefix: 'PCY', label: 'Panaeolus cyanescens (PCY)' },
-  { prefix: 'HER-T', label: 'Hericium erinaceus (thermophilic) (HER-T)' },
-  { prefix: 'PUL', label: 'Pleurotus pulmonarius (PUL)' },
-  { prefix: 'PST', label: 'Panellus stipticus (PST)' },
-  { prefix: 'PSM', label: 'Psilocybe mexicana (PSM)' },
-];
-
 @Injectable({
   providedIn: 'root',
 })
 export class CultureService {
   private readonly STORAGE_KEY = 'mycology-genetics-tracker-data-v1';
-  private cultures = new BehaviorSubject<Culture[]>([]);
-  private relationships = new BehaviorSubject<Relationship[]>([]);
-  private strains = new BehaviorSubject<Strain[]>([]);
-  private selectedNodeId = new BehaviorSubject<string | null>(null);
-  private filters = new BehaviorSubject<FilterOptions>({
+  private readonly injector = inject(Injector);
+
+  private readonly cultures: WritableSignal<Culture[]> = signal([]);
+  private readonly relationships: WritableSignal<Relationship[]> = signal([]);
+  private readonly strains: WritableSignal<Strain[]> = signal([]);
+  private readonly selectedNodeId: WritableSignal<string | null> = signal(null);
+  private readonly filters: WritableSignal<FilterOptions> = signal({
     strain: '',
     type: '',
     filialGeneration: '',
@@ -68,50 +68,79 @@ export class CultureService {
     minViability: 0,
   });
 
-  // Filtered cultures observable
-  public filteredCultures = combineLatest([this.cultures, this.filters]).pipe(
-    map(([cultures, filters]) => this.applyFilters(cultures, filters)),
+  private readonly filteredCulturesSignal = computed(() =>
+    this.applyFilters(this.cultures(), this.filters()),
   );
-  private persistenceSubscription?: Subscription;
+  private readonly cultures$ = toObservable(this.cultures, {
+    injector: this.injector,
+  });
+  private readonly relationships$ = toObservable(this.relationships, {
+    injector: this.injector,
+  });
+  private readonly strains$ = toObservable(this.strains, {
+    injector: this.injector,
+  });
+  private readonly selectedNodeId$ = toObservable(this.selectedNodeId, {
+    injector: this.injector,
+  });
+  private readonly filters$ = toObservable(this.filters, {
+    injector: this.injector,
+  });
+  private readonly filteredCultures$ = toObservable(
+    this.filteredCulturesSignal,
+    {
+      injector: this.injector,
+    },
+  );
 
   constructor() {
     const loaded = this.loadFromStorage();
-    if (!loaded) {
+    // TODO: Remove when done testing.
+    if (!loaded && !environment.production) {
       this.loadSampleData();
     }
+    // END TODO
     this.setupAutoPersistence();
   }
 
   // Observable streams
   getCultures(): Observable<Culture[]> {
-    return this.cultures.asObservable();
+    return this.cultures$;
   }
 
   getFilteredCultures(): Observable<Culture[]> {
-    return this.filteredCultures;
+    return this.filteredCultures$;
   }
 
   getRelationships(): Observable<Relationship[]> {
-    return this.relationships.asObservable();
+    return this.relationships$;
   }
 
   getStrains(): Observable<Strain[]> {
-    return this.strains.asObservable();
+    return this.strains$;
   }
 
   getSelectedNodeId(): Observable<string | null> {
-    return this.selectedNodeId.asObservable();
+    return this.selectedNodeId$;
   }
 
   getFilters(): Observable<FilterOptions> {
-    return this.filters.asObservable();
+    return this.filters$;
+  }
+
+  getCulturesSignal(): Signal<Culture[]> {
+    return this.cultures.asReadonly();
+  }
+
+  getSelectedNodeIdSignal(): Signal<string | null> {
+    return this.selectedNodeId.asReadonly();
   }
 
   getStrainOptions(): StrainOption[] {
     const options = [...STRAIN_FAMILY_OPTIONS];
     const existingPrefixes = new Set(options.map((option) => option.prefix));
 
-    this.strains.getValue().forEach((strain) => {
+    this.strains().forEach((strain) => {
       const prefix = this.extractStrainPrefix(strain.id);
       if (!existingPrefixes.has(prefix)) {
         options.push({
@@ -129,10 +158,12 @@ export class CultureService {
    * Suggests the next strain code for a given prefix.
    * Returns both the full strain code and the segment number.
    */
-  suggestNextStrainCode(prefix: string, currentCultureId?: string): { strain: string; segment: number } {
+  suggestNextStrainCode(
+    prefix: string,
+    currentCultureId?: string,
+  ): { strain: string; segment: number } {
     const normalizedPrefix = (prefix || 'STR').toUpperCase();
-    const maxIndex = this.cultures
-      .getValue()
+    const maxIndex = this.cultures()
       .filter((culture) => culture.id !== currentCultureId)
       .reduce((max, culture) => {
         const parsed = this.parseStrainCode(culture.strain);
@@ -145,7 +176,7 @@ export class CultureService {
     const nextIndex = maxIndex + 1;
     return {
       strain: `${normalizedPrefix}-${nextIndex}`,
-      segment: nextIndex
+      segment: nextIndex,
     };
   }
 
@@ -159,15 +190,14 @@ export class CultureService {
     childType: CultureType,
     relationshipType: RelationshipType | string,
   ): { strain: string; segment: number } {
-    const parent = this.cultures
-      .getValue()
-      .find((culture) => culture.id === parentId);
+    const parent = this.cultures().find((culture) => culture.id === parentId);
     if (!parent) {
       return { strain: 'STR-1', segment: 1 };
     }
 
     // Check if this is a spore collection (sexual reproduction / filial generation change)
-    const isCollectingSpores = relationshipType === RelationshipType.COLLECTING_SPORES;
+    const isCollectingSpores =
+      relationshipType === RelationshipType.COLLECTING_SPORES;
 
     if (isCollectingSpores) {
       // Increment the strain segment for new filial generation
@@ -175,14 +205,14 @@ export class CultureService {
       const newSegment = (parent.strainSegment || 1) + 1;
       return {
         strain: `${parentPrefix}-${newSegment}`,
-        segment: newSegment
+        segment: newSegment,
       };
     }
 
     // For all other relationships, inherit parent's strain and segment
     return {
       strain: parent.strain,
-      segment: parent.strainSegment || 1
+      segment: parent.strainSegment || 1,
     };
   }
 
@@ -211,9 +241,9 @@ export class CultureService {
       !!params.parentId;
 
     if (isTransfer && params.parentId) {
-      const parent = this.cultures
-        .getValue()
-        .find((culture) => culture.id === params.parentId);
+      const parent = this.cultures().find(
+        (culture) => culture.id === params.parentId,
+      );
       const parentToken = parent
         ? this.extractTypeTokenFromLabel(parent.label, params.type)
         : null;
@@ -247,16 +277,15 @@ export class CultureService {
 
   // New: Update filters
   updateFilters(filters: Partial<FilterOptions>): void {
-    const currentFilters = this.filters.getValue();
-    this.filters.next({
+    this.filters.update((currentFilters) => ({
       ...currentFilters,
       ...filters,
-    });
+    }));
   }
 
   // New: Reset filters to default
   resetFilters(): void {
-    this.filters.next({
+    this.filters.set({
       strain: '',
       type: '',
       filialGeneration: '',
@@ -280,11 +309,11 @@ export class CultureService {
     }
 
     const normalized = this.normalizeImportedData(parsed);
-    this.cultures.next(normalized.cultures);
-    this.relationships.next(normalized.relationships);
-    this.strains.next(normalized.strains);
-    this.filters.next(normalized.filters);
-    this.selectedNodeId.next(normalized.selectedNodeId);
+    this.cultures.set(normalized.cultures);
+    this.relationships.set(normalized.relationships);
+    this.strains.set(normalized.strains);
+    this.filters.set(normalized.filters);
+    this.selectedNodeId.set(normalized.selectedNodeId);
     this.saveToStorage();
   }
 
@@ -347,13 +376,13 @@ export class CultureService {
       },
     } as Culture;
 
-    const current = this.cultures.getValue();
-    this.cultures.next([...current, newCulture]);
+    const current = this.cultures();
+    this.cultures.set([...current, newCulture]);
     return newCulture;
   }
 
   updateCulture(id: string, updates: Partial<Culture>): void {
-    const current = this.cultures.getValue();
+    const current = this.cultures();
     const index = current.findIndex((c) => c.id === id);
     if (index !== -1) {
       const updated = [...current];
@@ -362,13 +391,15 @@ export class CultureService {
 
       // If strain prefix changed (species/family changed), propagate to descendants
       const oldPrefix = this.extractStrainPrefix(oldCulture.strain);
-      const newPrefix = updates.strain ? this.extractStrainPrefix(updates.strain) : oldPrefix;
+      const newPrefix = updates.strain
+        ? this.extractStrainPrefix(updates.strain)
+        : oldPrefix;
 
       if (newPrefix !== oldPrefix && updates.strain) {
         this.propagateStrainPrefixChange(id, newPrefix, updated);
       }
 
-      this.cultures.next(updated);
+      this.cultures.set(updated);
     }
   }
 
@@ -376,20 +407,25 @@ export class CultureService {
    * Propagates strain prefix changes to all descendants.
    * Maintains +1 increment for each spore-based generation.
    */
-  private propagateStrainPrefixChange(nodeId: string, newPrefix: string, cultures: Culture[]): void {
-    const relationships = this.relationships.getValue();
-    const children = relationships.filter(r => r.sourceId === nodeId);
+  private propagateStrainPrefixChange(
+    nodeId: string,
+    newPrefix: string,
+    cultures: Culture[],
+  ): void {
+    const relationships = this.relationships();
+    const children = relationships.filter((r) => r.sourceId === nodeId);
 
-    children.forEach(rel => {
-      const childIndex = cultures.findIndex(c => c.id === rel.targetId);
+    children.forEach((rel) => {
+      const childIndex = cultures.findIndex((c) => c.id === rel.targetId);
       if (childIndex !== -1) {
         const child = cultures[childIndex];
-        const isCollectingSpores = rel.type === RelationshipType.COLLECTING_SPORES;
+        const isCollectingSpores =
+          rel.type === RelationshipType.COLLECTING_SPORES;
 
         // Update child's strain with new prefix, keeping the same segment logic
         cultures[childIndex] = {
           ...child,
-          strain: `${newPrefix}-${child.strainSegment}`
+          strain: `${newPrefix}-${child.strainSegment}`,
         };
 
         // Recursively update descendants
@@ -399,13 +435,42 @@ export class CultureService {
   }
 
   deleteCulture(id: string): void {
-    const current = this.cultures.getValue();
-    this.cultures.next(current.filter((c) => c.id !== id));
+    const current = this.cultures();
+    this.cultures.set(current.filter((c) => c.id !== id));
 
     // Also remove relationships involving this culture
-    const rels = this.relationships.getValue();
-    this.relationships.next(
+    const rels = this.relationships();
+    this.relationships.set(
       rels.filter((r) => r.sourceId !== id && r.targetId !== id),
+    );
+  }
+
+  deleteCultureTree(nodeId: string | null | undefined): void {
+    if (!nodeId) {
+      return;
+    }
+
+    const cultures = this.cultures();
+    if (!cultures.some((culture) => culture.id === nodeId)) {
+      return;
+    }
+
+    const descendants = this.getDescendants(nodeId);
+    const idsToRemove = new Set<string>([
+      nodeId,
+      ...descendants.map((culture) => culture.id),
+    ]);
+
+    this.cultures.set(
+      cultures.filter((culture) => !idsToRemove.has(culture.id)),
+    );
+
+    const relationships = this.relationships();
+    this.relationships.set(
+      relationships.filter(
+        (rel) =>
+          !idsToRemove.has(rel.sourceId) && !idsToRemove.has(rel.targetId),
+      ),
     );
   }
 
@@ -415,55 +480,54 @@ export class CultureService {
       id: uuidv4(),
     } as Relationship;
 
-    const current = this.relationships.getValue();
-    this.relationships.next([...current, newRelationship]);
+    const current = this.relationships();
+    this.relationships.set([...current, newRelationship]);
     return newRelationship;
   }
 
   updateRelationship(id: string, updates: Partial<Relationship>): void {
-    const current = this.relationships.getValue();
+    const current = this.relationships();
     const index = current.findIndex((r) => r.id === id);
     if (index !== -1) {
       const updated = [...current];
       updated[index] = { ...updated[index], ...updates };
-      this.relationships.next(updated);
+      this.relationships.set(updated);
     }
   }
 
   deleteRelationship(id: string): void {
-    const current = this.relationships.getValue();
-    this.relationships.next(current.filter((r) => r.id !== id));
+    const current = this.relationships();
+    this.relationships.set(current.filter((r) => r.id !== id));
   }
 
-  // Relationship queries
   getChildren(parentId: string): Culture[] {
-    const rels = this.relationships.getValue();
+    const rels = this.relationships();
     const childIds = rels
       .filter((r) => r.sourceId === parentId)
       .map((r) => r.targetId);
 
-    const cultures = this.cultures.getValue();
+    const cultures = this.cultures();
     return cultures.filter((c) => childIds.includes(c.id));
   }
 
   getParent(childId: string): Culture | undefined {
-    const rels = this.relationships.getValue();
+    const rels = this.relationships();
     const parentRel = rels.find((r) => r.targetId === childId);
     if (!parentRel) return undefined;
 
-    const cultures = this.cultures.getValue();
+    const cultures = this.cultures();
     return cultures.find((c) => c.id === parentRel.sourceId);
   }
 
   getParentRelationship(childId: string): Relationship | undefined {
-    const rels = this.relationships.getValue();
+    const rels = this.relationships();
     return rels.find((r) => r.targetId === childId);
   }
 
   getAncestors(nodeId: string): Culture[] {
     const ancestors: Culture[] = [];
     let currentId = nodeId;
-    const cultures = this.cultures.getValue();
+    const cultures = this.cultures();
 
     while (true) {
       const parent = this.getParent(currentId);
@@ -479,7 +543,7 @@ export class CultureService {
     const descendants: Culture[] = [];
     const toVisit = [nodeId];
     const visited = new Set<string>();
-    const cultures = this.cultures.getValue();
+    const cultures = this.cultures();
 
     while (toVisit.length > 0) {
       const currentId = toVisit.shift()!;
@@ -493,16 +557,15 @@ export class CultureService {
 
     return descendants;
   }
-  // Selection management
+
   setSelectedNode(nodeId: string | null): void {
-    this.selectedNodeId.next(nodeId);
+    this.selectedNodeId.set(nodeId);
   }
 
-  // Archive/restore
   archiveCulture(id: string): void {
     this.updateCulture(id, {
       metadata: {
-        ...this.cultures.getValue().find((c) => c.id === id)?.metadata,
+        ...this.cultures().find((c) => c.id === id)?.metadata,
         isArchived: true,
       },
     });
@@ -511,253 +574,26 @@ export class CultureService {
   restoreCulture(id: string): void {
     this.updateCulture(id, {
       metadata: {
-        ...this.cultures.getValue().find((c) => c.id === id)?.metadata,
+        ...this.cultures().find((c) => c.id === id)?.metadata,
         isArchived: false,
       },
     });
   }
 
-  // Sample data loader
+  // TODO: Remove when done testing.
   private loadSampleData(): void {
-    // Sample strains
-    const strains: Strain[] = [
-      {
-        id: 'LED',
-        species: 'Lentinula edodes',
-        commonName: 'Shiitake',
-        source: 'Catalog',
-        dateAcquired: new Date('2024-01-01'),
-        notes: 'Default strain family option',
-      },
-      {
-        id: 'POS',
-        species: 'Pleurotus ostreatus',
-        commonName: 'Oyster',
-        source: 'Catalog',
-        dateAcquired: new Date('2024-01-15'),
-        notes: 'Default strain family option',
-      },
-      {
-        id: 'PCI',
-        species: 'Pleurotus citrinopileatus',
-        commonName: 'Golden Oyster',
-        source: 'Catalog',
-        dateAcquired: new Date('2024-01-01'),
-        notes: 'Default strain family option',
-      },
-      {
-        id: 'PDJ',
-        species: 'Pleurotus djamor',
-        commonName: 'Pink Oyster',
-        source: 'Catalog',
-        dateAcquired: new Date('2024-01-01'),
-        notes: 'Default strain family option',
-      },
-      {
-        id: 'PCU',
-        species: 'Psilocybe cubensis',
-        commonName: 'Cubensis',
-        source: 'Catalog',
-        dateAcquired: new Date('2024-01-01'),
-        notes: 'Default strain family option',
-      },
-      {
-        id: 'PCY',
-        species: 'Panaeolus cyanescens',
-        commonName: 'Pan Cyan',
-        source: 'Catalog',
-        dateAcquired: new Date('2024-03-20'),
-        notes: 'Default strain family option',
-      },
-      {
-        id: 'HER-T',
-        species: 'Hericium erinaceus (thermophilic)',
-        commonName: "Lion's Mane",
-        source: 'Catalog',
-        dateAcquired: new Date('2024-01-01'),
-        notes: 'Default strain family option',
-      },
-      {
-        id: 'PUL',
-        species: 'Pleurotus pulmonarius',
-        commonName: 'Phoenix Oyster',
-        source: 'Catalog',
-        dateAcquired: new Date('2024-01-01'),
-        notes: 'Default strain family option',
-      },
-      {
-        id: 'PST',
-        species: 'Panellus stipticus',
-        commonName: 'Bitter Oyster',
-        source: 'Catalog',
-        dateAcquired: new Date('2024-01-01'),
-        notes: 'Default strain family option',
-      },
-      {
-        id: 'PSM',
-        species: 'Psilocybe mexicana',
-        commonName: 'Mexicana',
-        source: 'Catalog',
-        dateAcquired: new Date('2024-01-01'),
-        notes: 'Default strain family option',
-      },
-    ];
+    const strains: Strain[] = strainsExample;
+    const cultures: Culture[] = culturesExample;
+    const relationships: Relationship[] = relationshipsExample;
 
-    // Sample cultures
-    const cultures: Culture[] = [
-      {
-        id: 'sp1',
-        label: 'POS-1 SP1',
-        type: CultureType.SPORE,
-        strain: 'POS-1',
-        strainSegment: 1,
-        filialGeneration: 'F0',
-        description: 'Original spore print from vendor',
-        dateCreated: new Date('2024-01-20'),
-        source: 'Vendor A',
-        notes: 'Dense print, dark purple',
-        metadata: { viability: 95, isArchived: false },
-      },
-      {
-        id: 'ag1',
-        label: 'POS-1 AG1',
-        type: CultureType.AGAR,
-        strain: 'POS-1',
-        strainSegment: 1,
-        filialGeneration: 'F0',
-        description: 'First isolation from SP1',
-        dateCreated: new Date('2024-01-25'),
-        notes: 'Rhizomorphic growth, clean',
-        metadata: { transferNumber: 1, isArchived: false },
-      },
-      {
-        id: 'ag1b',
-        label: 'POS-1 AG1B',
-        type: CultureType.AGAR,
-        strain: 'POS-1',
-        strainSegment: 1,
-        filialGeneration: 'F0-T1',
-        description: 'First transfer from AG1',
-        dateCreated: new Date('2024-02-01'),
-        notes: 'Sector selected for speed',
-        metadata: { transferNumber: 2, isArchived: false },
-      },
-      {
-        id: 'lc1',
-        label: 'POS-1 LC1',
-        type: CultureType.LIQUID_CULTURE,
-        strain: 'POS-1',
-        strainSegment: 1,
-        filialGeneration: 'F0',
-        description: 'Liquid culture from AG1B',
-        dateCreated: new Date('2024-02-05'),
-        notes: 'Honey 4%, clear',
-        metadata: { viability: 90, isArchived: false },
-      },
-      {
-        id: 'gr1',
-        label: 'POS-1 GR1',
-        type: CultureType.GRAIN_SPAWN,
-        strain: 'POS-1',
-        strainSegment: 1,
-        filialGeneration: 'F0',
-        description: 'Rye grain from LC1',
-        dateCreated: new Date('2024-02-10'),
-        notes: 'Colonized in 12 days',
-        metadata: { isArchived: false },
-      },
-      {
-        id: 'fb1',
-        label: 'POS-1 FB1',
-        type: CultureType.FRUIT,
-        strain: 'POS-1',
-        strainSegment: 1,
-        filialGeneration: 'F0',
-        description: 'First flush from GR1',
-        dateCreated: new Date('2024-03-01'),
-        notes: '150g, perfect clusters',
-        metadata: { isArchived: false },
-      },
-      {
-        id: 'cl1',
-        label: 'POS-1 CL1',
-        type: CultureType.CLONE,
-        strain: 'POS-1',
-        strainSegment: 1,
-        filialGeneration: 'F1',
-        description: 'Tissue clone from FB1',
-        dateCreated: new Date('2024-03-05'),
-        notes: 'Selected from largest fruit',
-        metadata: { cloneGeneration: 1, isArchived: false },
-      },
-      {
-        id: 'ag1c',
-        label: 'POS-1 AG1C',
-        type: CultureType.AGAR,
-        strain: 'POS-1',
-        strainSegment: 1,
-        filialGeneration: 'F1-T1',
-        description: 'First transfer from CL1',
-        dateCreated: new Date('2024-03-10'),
-        notes: 'Strong growth',
-        metadata: { transferNumber: 1, cloneGeneration: 1, isArchived: false },
-      },
-    ];
-
-    // Sample relationships
-    const relationships: Relationship[] = [
-      {
-        id: 'r1',
-        sourceId: 'sp1',
-        targetId: 'ag1',
-        type: RelationshipType.GERMINATION,
-      },
-      {
-        id: 'r2',
-        sourceId: 'ag1',
-        targetId: 'ag1b',
-        type: RelationshipType.TRANSFER,
-      },
-      {
-        id: 'r3',
-        sourceId: 'ag1b',
-        targetId: 'lc1',
-        type: RelationshipType.INOCULATION,
-      },
-      {
-        id: 'r4',
-        sourceId: 'lc1',
-        targetId: 'gr1',
-        type: RelationshipType.INOCULATION,
-      },
-      {
-        id: 'r5',
-        sourceId: 'gr1',
-        targetId: 'fb1',
-        type: RelationshipType.FRUITING,
-      },
-      {
-        id: 'r6',
-        sourceId: 'fb1',
-        targetId: 'cl1',
-        type: RelationshipType.CLONE_FROM_FRUIT,
-      },
-      {
-        id: 'r7',
-        sourceId: 'cl1',
-        targetId: 'ag1c',
-        type: RelationshipType.TRANSFER,
-      },
-    ];
-
-    this.cultures.next(cultures);
-    this.relationships.next(relationships);
-    this.strains.next(strains);
+    this.cultures.set(cultures);
+    this.relationships.set(relationships);
+    this.strains.set(strains);
   }
 
   // Search functionality
   searchCultures(query: string): Observable<Culture[]> {
-    return this.cultures.pipe(
+    return this.cultures$.pipe(
       map((cultures) =>
         cultures.filter(
           (culture) =>
@@ -776,7 +612,7 @@ export class CultureService {
     byStrain: Record<string, number>;
     archived: number;
   }> {
-    return this.cultures.pipe(
+    return this.cultures$.pipe(
       map((cultures) => {
         const stats = {
           total: cultures.length,
@@ -802,15 +638,17 @@ export class CultureService {
   }
 
   private setupAutoPersistence(): void {
-    this.persistenceSubscription = combineLatest([
-      this.cultures,
-      this.relationships,
-      this.strains,
-      this.filters,
-      this.selectedNodeId,
-    ]).subscribe(() => {
-      this.saveToStorage();
-    });
+    effect(
+      () => {
+        this.cultures();
+        this.relationships();
+        this.strains();
+        this.filters();
+        this.selectedNodeId();
+        this.saveToStorage();
+      },
+      { injector: this.injector },
+    );
   }
 
   private loadFromStorage(): boolean {
@@ -822,11 +660,11 @@ export class CultureService {
     try {
       const parsed = JSON.parse(raw) as unknown;
       const normalized = this.normalizeImportedData(parsed);
-      this.cultures.next(normalized.cultures);
-      this.relationships.next(normalized.relationships);
-      this.strains.next(normalized.strains);
-      this.filters.next(normalized.filters);
-      this.selectedNodeId.next(normalized.selectedNodeId);
+      this.cultures.set(normalized.cultures);
+      this.relationships.set(normalized.relationships);
+      this.strains.set(normalized.strains);
+      this.filters.set(normalized.filters);
+      this.selectedNodeId.set(normalized.selectedNodeId);
       return true;
     } catch {
       return false;
@@ -858,11 +696,11 @@ export class CultureService {
   private buildPersistedData(): PersistedData {
     return {
       version: 1,
-      cultures: this.cultures.getValue(),
-      relationships: this.relationships.getValue(),
-      strains: this.strains.getValue(),
-      filters: this.filters.getValue(),
-      selectedNodeId: this.selectedNodeId.getValue(),
+      cultures: this.cultures(),
+      relationships: this.relationships(),
+      strains: this.strains(),
+      filters: this.filters(),
+      selectedNodeId: this.selectedNodeId(),
     };
   }
 
@@ -989,8 +827,7 @@ export class CultureService {
       : currentCultureId
       ? this.getTreeCultureIds(currentCultureId)
       : null;
-    const cultures = this.cultures
-      .getValue()
+    const cultures = this.cultures()
       .filter((culture) => culture.id !== currentCultureId)
       .filter((culture) => !treeCultureIds || treeCultureIds.has(culture.id));
 
@@ -1045,9 +882,9 @@ export class CultureService {
     parentToken: string,
     letterMode: boolean,
   ): string[] {
-    const relationships = this.relationships.getValue();
+    const relationships = this.relationships();
     const culturesById = new Map(
-      this.cultures.getValue().map((culture) => [culture.id, culture]),
+      this.cultures().map((culture) => [culture.id, culture]),
     );
     const suffixRegex = letterMode
       ? new RegExp(`^${parentToken}([A-Z]+)$`)
@@ -1071,7 +908,7 @@ export class CultureService {
   }
 
   private getTreeCultureIds(nodeId: string): Set<string> {
-    const relationships = this.relationships.getValue();
+    const relationships = this.relationships();
     const rootId = this.findRootId(nodeId, relationships);
     const bySource = new Map<string, string[]>();
 

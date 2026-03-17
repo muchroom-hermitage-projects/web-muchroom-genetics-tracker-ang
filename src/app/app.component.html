@@ -1,28 +1,4 @@
-<!-- app.component.html -->
-<mat-toolbar color="primary" class="app-toolbar">
-  <span>Mycology Genetics Tracker</span>
-  <span class="toolbar-spacer"></span>
-  <button mat-button (click)="addRootCulture()">
-    <mat-icon>add</mat-icon> Add Root Culture
-  </button>
-  <button mat-button [matMenuTriggerFor]="menu">
-    <mat-icon>menu</mat-icon>
-  </button>
-  <mat-menu #menu="matMenu">
-    <button mat-menu-item (click)="exportData()">Export Data</button>
-    <button mat-menu-item (click)="importData(importFileInput)">Import Data</button>
-    <mat-divider></mat-divider>
-    <button mat-menu-item (click)="showAbout()">About</button>
-  </mat-menu>
-</mat-toolbar>
-
-<input
-  #importFileInput
-  type="file"
-  accept=".json,application/json"
-  (change)="onImportFileSelected($event)"
-  hidden
-/>
+<app-navbar></app-navbar>
 
 <mat-sidenav-container class="sidenav-container">
   <mat-sidenav mode="side" opened class="sidenav">

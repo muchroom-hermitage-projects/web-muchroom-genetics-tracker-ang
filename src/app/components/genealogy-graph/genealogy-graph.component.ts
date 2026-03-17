@@ -1,80 +1,114 @@
-// components/genealogy-graph/genealogy-graph.component.ts
+import { CommonModule, NgPlural } from '@angular/common';
 import {
   Component,
-  OnInit,
   AfterViewInit,
   ViewChild,
   ElementRef,
   OnDestroy,
+  computed,
+  effect,
+  inject,
+  signal,
 } from '@angular/core';
-import { Subscription } from 'rxjs';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { FormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
-import cytoscape from 'cytoscape';
+import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import cytoscape, { LayoutOptions } from 'cytoscape';
+import navigator from 'cytoscape-navigator';
 import dagre from 'cytoscape-dagre';
+import contextMenus from 'cytoscape-context-menus';
 
 import { CultureService } from '../../services/culture.service';
 import { GraphBuilderService } from '../../services/graph-builder.service';
 import { Culture, Relationship } from '../../models/culture.model';
 import { NodeModalComponent } from '../node-modal/node-modal.component';
+import {
+  CONTEXT_MENU_SELECTOR,
+  ContextMenuInstance,
+  CytoscapeWithContextMenus,
+} from '../../models/context-menu.models';
 
 // Register dagre layout
 if (cytoscape && typeof cytoscape.use === 'function') {
   cytoscape.use(dagre);
+  navigator(cytoscape);
+  contextMenus(cytoscape);
 }
+
+const E2E_CY_HANDLE = '__GENETICS_GRAPH_CY__';
 
 @Component({
   selector: 'app-genealogy-graph',
+  standalone: true,
+  imports: [
+    CommonModule,
+    NgPlural,
+    FormsModule,
+    MatButtonModule,
+    MatIconModule,
+    MatTooltipModule,
+    MatCheckboxModule,
+  ],
   templateUrl: './genealogy-graph.component.html',
   styleUrls: ['./genealogy-graph.component.scss'],
 })
-export class GenealogyGraphComponent
-  implements OnInit, AfterViewInit, OnDestroy
-{
+export class GenealogyGraphComponent implements AfterViewInit, OnDestroy {
+  private readonly cultureService = inject(CultureService);
+  private readonly graphBuilder = inject(GraphBuilderService);
+  private readonly dialog = inject(MatDialog);
+  private readonly initialLayout = {
+    name: 'dagre',
+    nodeSep: 50,
+    edgeSep: 20,
+    rankSep: 50,
+    rankDir: 'TB',
+    animate: false,
+    spacingFactor: 1.5,
+    nodeDimensionsIncludeLabels: true,
+  } as LayoutOptions;
+
+  private readonly filteredCulturesSignal = toSignal(
+    this.cultureService.getFilteredCultures(),
+    { initialValue: [] as Culture[] },
+  );
+  readonly cultures = this.filteredCulturesSignal;
+  private readonly relationshipsSignal = toSignal(
+    this.cultureService.getRelationships(),
+    { initialValue: [] as Relationship[] },
+  );
+  private readonly selectedNodeIdSignal = toSignal(
+    this.cultureService.getSelectedNodeId(),
+    { initialValue: null },
+  );
+
   @ViewChild('cyContainer') cyContainer!: ElementRef;
 
   private cy!: cytoscape.Core;
-  cultures: Culture[] = [];
-  private relationships: Relationship[] = [];
-  private subscriptions: Subscription[] = [];
-  subtreeMode: boolean = true;
-
-  get subtreeModeLabel(): string {
-    return this.subtreeMode ? 'Subtree Mode' : 'Cascade Drag';
-  }
-
-  get subtreeModeTooltip(): string {
-    return this.subtreeMode
+  private contextMenu?: ContextMenuInstance;
+  readonly subtreeMode = signal(true);
+  readonly subtreeModeLabel = computed(() =>
+    this.subtreeMode() ? 'Subtree Mode' : 'Cascade Drag',
+  );
+  readonly subtreeModeTooltip = computed(() => {
+    return this.subtreeMode()
       ? 'Subtree Mode: Dragging a parent node moves all its descendants while maintaining relative positions.'
       : 'Cascade Drag: Dragging a node moves only that specific node without affecting its children.';
-  }
+  });
 
-  constructor(
-    private cultureService: CultureService,
-    private graphBuilder: GraphBuilderService,
-    private dialog: MatDialog,
-  ) {}
-
-  ngOnInit(): void {
-    // Subscribe to data changes
-    this.subscriptions.push(
-      this.cultureService.getFilteredCultures().subscribe((cultures) => {
-        this.cultures = cultures;
-        this.refreshGraph();
-      }),
-    );
-
-    this.subscriptions.push(
-      this.cultureService.getRelationships().subscribe((relationships) => {
-        this.relationships = relationships;
-        this.refreshGraph();
-      }),
-    );
-
-    this.subscriptions.push(
-      this.cultureService.getSelectedNodeId().subscribe((nodeId) => {
-        this.highlightNode(nodeId);
-      }),
-    );
+  constructor() {
+    effect(() => {
+      const cultures = this.cultures();
+      const relationships = this.relationshipsSignal();
+      this.refreshGraph(cultures, relationships);
+    });
+    effect(() => {
+      const selectedNodeId = this.selectedNodeIdSignal();
+      this.highlightNode(selectedNodeId);
+    });
   }
 
   ngAfterViewInit(): void {
@@ -82,15 +116,28 @@ export class GenealogyGraphComponent
   }
 
   ngOnDestroy(): void {
-    this.subscriptions.forEach(sub => sub.unsubscribe());
     if (this.cy) {
       this.cy.destroy();
     }
+    if (this.contextMenu) {
+      this.contextMenu.destroy();
+    }
+    this.clearE2EHandle();
   }
 
   private getVisibleRelationships(): Relationship[] {
-    const visibleNodeIds = new Set(this.cultures.map((c) => c.id));
-    return this.relationships.filter(
+    return this.getVisibleRelationshipsFor(
+      this.cultures(),
+      this.relationshipsSignal(),
+    );
+  }
+
+  private getVisibleRelationshipsFor(
+    cultures: Culture[],
+    relationships: Relationship[],
+  ): Relationship[] {
+    const visibleNodeIds = new Set(cultures.map((c) => c.id));
+    return relationships.filter(
       (r) => visibleNodeIds.has(r.sourceId) && visibleNodeIds.has(r.targetId),
     );
   }
@@ -100,34 +147,34 @@ export class GenealogyGraphComponent
       return;
     }
 
+    const cultures = this.cultures();
+    const relationships = this.relationshipsSignal();
     const elements = this.graphBuilder.buildElements(
-      this.cultures,
-      this.getVisibleRelationships(),
+      cultures,
+      this.getVisibleRelationshipsFor(cultures, relationships),
     );
 
     this.cy = cytoscape({
       container: this.cyContainer.nativeElement,
       elements: elements,
       style: this.graphBuilder.getStylesheet(),
-      // Fixed: Layout options are correctly formatted here
-      layout: {
-        name: 'dagre',
-        // These are dagre-specific options that work in the initial layout
-        nodeSep: 50,
-        edgeSep: 20,
-        rankSep: 100,
-        rankDir: 'TB',
-        ranker: 'network-simplex',
-        animate: false
-      } as any,  // Type assertion to bypass the strict name check
+      layout: this.initialLayout,
       userZoomingEnabled: true,
       userPanningEnabled: true,
       boxSelectionEnabled: false,
       autoungrabify: false,
       autounselectify: false,
     });
+    this.exposeCyForE2E();
 
-    // Node click handler
+    this.cy.navigator({
+      container: '#cyNavigator',
+      viewLiveFramerate: 0,
+      dblClickDelay: 200,
+      removeCustomContainer: false,
+    });
+    this.initContextMenu();
+
     this.cy.on('tap', 'node', (event) => {
       const node = event.target;
       const mouseEvent = event.originalEvent as MouseEvent | undefined;
@@ -139,21 +186,17 @@ export class GenealogyGraphComponent
       }
     });
 
-    // Background click clears selection
     this.cy.on('tap', (event) => {
       if (event.target === this.cy) {
         this.cultureService.setSelectedNode(null);
       }
     });
 
-    // Edge click handler
     this.cy.on('tap', 'edge', (event) => {
       const edge = event.target;
-      console.log('Edge clicked:', edge.data());
-      // You could show relationship details here
+      // console.log('Edge clicked:', edge.data());
     });
 
-    // Recursive subtree dragging
     this.setupRecursiveSubtreeDragging();
   }
 
@@ -167,10 +210,8 @@ export class GenealogyGraphComponent
       draggedNodeId = draggedNode.id();
       dragStartPositions = new Map();
 
-      // Get all descendants recursively
       const descendants = this.getDescendants(draggedNode);
 
-      // Store initial positions of dragged node and all descendants
       dragStartPositions.set(draggedNode.id(), {
         x: draggedNode.position('x'),
         y: draggedNode.position('y'),
@@ -192,7 +233,7 @@ export class GenealogyGraphComponent
       if (draggedNode.id() !== draggedNodeId) return;
 
       // Only apply to descendants if subtree mode is enabled
-      if (!this.subtreeMode) return;
+      if (!this.subtreeMode()) return;
 
       // Calculate delta from original position
       const originalPos = dragStartPositions.get(draggedNode.id());
@@ -220,9 +261,6 @@ export class GenealogyGraphComponent
 
       const draggedNode = event.target;
       if (draggedNode.id() !== draggedNodeId) return;
-
-      // Positions are already updated by Cytoscape and our drag handler
-      // Relative distances are maintained
 
       // Clear drag state
       dragStartPositions = null;
@@ -258,30 +296,22 @@ export class GenealogyGraphComponent
     return descendants;
   }
 
-  private refreshGraph(): void {
+  private refreshGraph(
+    cultures: Culture[],
+    relationships: Relationship[],
+  ): void {
     if (!this.cy) return;
 
     const elements = this.graphBuilder.buildElements(
-      this.cultures,
-      this.getVisibleRelationships(),
+      cultures,
+      this.getVisibleRelationshipsFor(cultures, relationships),
     );
     this.cy.elements().remove();
     this.cy.add(elements);
 
-    // Fixed: Use the correct approach for applying layout after initialization
-    const layout = this.cy.layout({
-      name: 'dagre',
-      // These options work in the layout method as well
-      nodeSep: 50,
-      edgeSep: 20,
-      rankSep: 100,
-      rankDir: 'TB',
-      animate: true,
-      animationDuration: 500,
-      // Add these to improve tree layout
-      spacingFactor: 1.5,
-      nodeDimensionsIncludeLabels: true
-    } as any); // Use type assertion to bypass TypeScript's strict checking
+    // Fixed: Use the correct approach for applying initialLayout after initialization
+    // Use type assertion to bypass TypeScript's strict checking
+    const layout = this.cy.layout(this.initialLayout);
 
     layout.run();
   }
@@ -305,7 +335,9 @@ export class GenealogyGraphComponent
           if (visited.has(currentId)) continue;
           visited.add(currentId);
 
-          const incomingEdges = this.cy.getElementById(currentId).incomers('edge');
+          const incomingEdges = this.cy
+            .getElementById(currentId)
+            .incomers('edge');
           incomingEdges.forEach((edge: any) => {
             const sourceId = edge.data('source');
             if (sourceId && !visited.has(sourceId)) {
@@ -321,7 +353,7 @@ export class GenealogyGraphComponent
   }
 
   private openEditCultureModal(nodeId: string): void {
-    const culture = this.cultures.find((c) => c.id === nodeId);
+    const culture = this.cultures().find((c) => c.id === nodeId);
     if (!culture) {
       return;
     }
@@ -350,25 +382,181 @@ export class GenealogyGraphComponent
     });
   }
 
+  private openAddChildModal(parentId: string): void {
+    this.dialog.open(NodeModalComponent, {
+      width: '500px',
+      data: { parentId },
+    });
+  }
 
+  private initContextMenu(): void {
+    const core = this.cy as CytoscapeWithContextMenus;
+    if (!core.contextMenus) {
+      return;
+    }
+
+    this.contextMenu?.destroy();
+
+    this.contextMenu = core.contextMenus({
+      menuItems: [
+        {
+          id: 'details',
+          content: 'Details',
+          selector: CONTEXT_MENU_SELECTOR,
+          onClickFunction: (event) => {
+            this.openEditCultureModal(event.target.id());
+          },
+        },
+        {
+          id: 'add-child',
+          content: 'Add child',
+          selector: CONTEXT_MENU_SELECTOR,
+          onClickFunction: (event) => {
+            this.openAddChildModal(event.target.id());
+          },
+        },
+        {
+          id: 'remove-node',
+          content: 'Remove node',
+          selector: CONTEXT_MENU_SELECTOR,
+          onClickFunction: (event) => {
+            this.handleRemoveNode(event.target.id());
+          },
+        },
+        {
+          id: 'archive',
+          content: 'Archive',
+          selector: CONTEXT_MENU_SELECTOR,
+          onClickFunction: (event) => {
+            this.setArchiveState(event.target.id(), true);
+          },
+        },
+        {
+          id: 'restore',
+          content: 'Restore',
+          selector: CONTEXT_MENU_SELECTOR,
+          show: false,
+          onClickFunction: (event) => {
+            this.setArchiveState(event.target.id(), false);
+          },
+        },
+        {
+          id: 'contaminated',
+          content: 'Contaminated',
+          selector: CONTEXT_MENU_SELECTOR,
+          onClickFunction: (event) => {
+            this.setContaminationState(event.target.id(), true);
+          },
+        },
+        {
+          id: 'clean',
+          content: 'Clean',
+          selector: CONTEXT_MENU_SELECTOR,
+          show: false,
+          onClickFunction: (event) => {
+            this.setContaminationState(event.target.id(), false);
+          },
+        },
+      ],
+    });
+
+    this.cy.on('cxttapstart', CONTEXT_MENU_SELECTOR, (event) => {
+      this.updateContextMenuVisibility(event.target);
+    });
+  }
+
+  private updateContextMenuVisibility(node: cytoscape.NodeSingular): void {
+    if (!this.contextMenu) {
+      return;
+    }
+
+    const culture = this.cultures().find((item) => item.id === node.id());
+    const isArchived = culture?.metadata?.isArchived ?? false;
+    const isContaminated = culture?.metadata?.isContaminated ?? false;
+
+    if (isArchived) {
+      this.contextMenu.showMenuItem('restore');
+      this.contextMenu.hideMenuItem('archive');
+    } else {
+      this.contextMenu.showMenuItem('archive');
+      this.contextMenu.hideMenuItem('restore');
+    }
+
+    if (isContaminated) {
+      this.contextMenu.showMenuItem('clean');
+      this.contextMenu.hideMenuItem('contaminated');
+    } else {
+      this.contextMenu.showMenuItem('contaminated');
+      this.contextMenu.hideMenuItem('clean');
+    }
+  }
+
+  private handleRemoveNode(nodeId: string): void {
+    const descendants = this.cultureService.getDescendants(nodeId);
+    const hasDescendants = descendants.length > 0;
+    const message = hasDescendants
+      ? 'Remove node and all its children?'
+      : 'Are you sure?';
+
+    if (!confirm(message)) {
+      return;
+    }
+
+    if (hasDescendants) {
+      this.cultureService.deleteCultureTree(nodeId);
+    } else {
+      this.cultureService.deleteCulture(nodeId);
+    }
+    this.cultureService.setSelectedNode(null);
+  }
+
+  private setArchiveState(nodeId: string, isArchived: boolean): void {
+    if (isArchived) {
+      this.cultureService.archiveCulture(nodeId);
+      return;
+    }
+
+    this.cultureService.restoreCulture(nodeId);
+  }
+
+  private setContaminationState(nodeId: string, isContaminated: boolean): void {
+    const culture = this.cultures().find((item) => item.id === nodeId);
+    if (!culture) {
+      return;
+    }
+
+    this.cultureService.updateCulture(nodeId, {
+      metadata: {
+        ...culture.metadata,
+        isContaminated,
+      },
+    });
+  }
+
+  private exposeCyForE2E(): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    (window as Window & { [E2E_CY_HANDLE]?: cytoscape.Core })[E2E_CY_HANDLE] =
+      this.cy;
+  }
+
+  private clearE2EHandle(): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    delete (window as Window & { [E2E_CY_HANDLE]?: cytoscape.Core })[
+      E2E_CY_HANDLE
+    ];
+  }
 
   fitGraph(): void {
     this.cy.fit();
   }
 
   resetLayout(): void {
-    // Fixed: Use type assertion for layout options
-    const layout = this.cy.layout({
-      name: 'dagre',
-      nodeSep: 50,
-      edgeSep: 20,
-      rankSep: 100,
-      rankDir: 'TB',
-      animate: true,
-      animationDuration: 500,
-      spacingFactor: 1.5,
-      nodeDimensionsIncludeLabels: true
-    } as any);
+    // Fixed: Use type assertion for initialLayout options
+    const layout = this.cy.layout(this.initialLayout);
 
     layout.run();
   }

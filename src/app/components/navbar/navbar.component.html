@@ -1,0 +1,27 @@
+<mat-toolbar color="primary" class="app-toolbar">
+  <span>Mycology Genetics Tracker</span>
+  <span class="toolbar-spacer"></span>
+  <button mat-button (click)="addRootCulture()">
+    <mat-icon>add</mat-icon> Add Root Culture
+  </button>
+  <button mat-button [matMenuTriggerFor]="menu">
+    <mat-icon>menu</mat-icon>
+  </button>
+  <mat-menu #menu="matMenu">
+    @for (item of menuItems; track item.id) { @if (item.dividerBefore) {
+    <mat-divider></mat-divider>
+    }
+    <button mat-menu-item (click)="handleMenuAction(item.id, importFileInput)">
+      {{ item.label }}
+    </button>
+    }
+  </mat-menu>
+</mat-toolbar>
+
+<input
+  #importFileInput
+  type="file"
+  accept=".json,application/json,.csv,text/csv"
+  (change)="onImportFileSelected($event)"
+  hidden
+/>

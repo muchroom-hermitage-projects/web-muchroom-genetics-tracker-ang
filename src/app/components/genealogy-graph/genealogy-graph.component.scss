@@ -28,7 +28,7 @@
 
 .graph-area {
   flex: 1;
-  background-color: #fafafa;
+  background-color: #fffbea;
   cursor: default;
 }
 
@@ -51,4 +51,16 @@
   height: 15px;
   color: #666;
   cursor: help;
+}
+
+/* Cytoscape navigator */
+.cytoscape-navigator {
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  bottom: 10px;
+  right: 10px;
+  border: 1px solid #ccc;
+  background: white;
+  z-index: 999;
 }

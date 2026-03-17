@@ -1,18 +1,45 @@
 // components/node-modal/node-modal.component.ts
 import { Component, Inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { MatDialog } from '@angular/material/dialog';
+import { ReactiveFormsModule } from '@angular/forms';
+import {
+  MatDialogRef,
+  MAT_DIALOG_DATA,
+  MatDialog,
+  MatDialogModule,
+} from '@angular/material/dialog';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import {
   Culture,
   CULTURE_TYPE_OPTIONS,
   CultureType,
   RelationshipType,
 } from '../../models/culture.model';
-import { CultureService, StrainOption } from '../../services/culture.service';
+import { StrainOption } from '../../models/strains.model';
+import { CultureService } from '../../services/culture.service';
 
 @Component({
   selector: 'app-node-modal',
+  standalone: true,
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    MatDialogModule,
+    MatFormFieldModule,
+    MatSelectModule,
+    MatInputModule,
+    MatCheckboxModule,
+    MatIconModule,
+    MatButtonModule,
+    MatTooltipModule,
+  ],
   templateUrl: './node-modal.component.html',
   styleUrls: ['./node-modal.component.scss'],
 })
@@ -34,7 +61,8 @@ export class NodeModalComponent {
     private dialogRef: MatDialogRef<NodeModalComponent>,
     private dialog: MatDialog,
     private cultureService: CultureService,
-    @Inject(MAT_DIALOG_DATA) public data: { culture?: Culture; isNew?: boolean; parentId?: string },
+    @Inject(MAT_DIALOG_DATA)
+    public data: { culture?: Culture; isNew?: boolean; parentId?: string },
   ) {
     this.isNew = data.isNew || false;
 
@@ -51,7 +79,9 @@ export class NodeModalComponent {
       this.resolvedStrainSegment = parent?.strainSegment || 1;
 
       this.strainOptions = this.cultureService.getStrainOptions();
-      this.originalStrainPrefix = this.extractStrainPrefix(parent?.strain || 'STR');
+      this.originalStrainPrefix = this.extractStrainPrefix(
+        parent?.strain || 'STR',
+      );
 
       this.cultureForm = this.fb.group({
         label: ['', Validators.required],
@@ -61,7 +91,10 @@ export class NodeModalComponent {
         description: [''],
         notes: [''],
         source: [''],
-        dateCreated: [this.toDateTimeLocalInput(new Date()), Validators.required],
+        dateCreated: [
+          this.toDateTimeLocalInput(new Date()),
+          Validators.required,
+        ],
         isArchived: [false],
         isContaminated: [parent?.metadata?.isContaminated || false],
         relationshipType: ['', Validators.required],
@@ -75,7 +108,9 @@ export class NodeModalComponent {
         this.isNew || !this.cultureService.getParent(data.culture!.id);
 
       // Get parent relationship if it exists
-      const parentRel = !this.isNew ? this.cultureService.getParentRelationship(data.culture!.id) : null;
+      const parentRel = !this.isNew
+        ? this.cultureService.getParentRelationship(data.culture!.id)
+        : null;
       this.parentRelationshipId = parentRel?.id || null;
 
       this.strainOptions = this.cultureService.getStrainOptions();
@@ -103,7 +138,7 @@ export class NodeModalComponent {
       if (parentRel) {
         this.cultureForm.addControl(
           'relationshipType',
-          this.fb.control(parentRel.type, Validators.required)
+          this.fb.control(parentRel.type, Validators.required),
         );
       }
 
@@ -159,7 +194,7 @@ export class NodeModalComponent {
         // Update relationship if it exists and was changed
         if (this.parentRelationshipId && formValue.relationshipType) {
           this.cultureService.updateRelationship(this.parentRelationshipId, {
-            type: formValue.relationshipType
+            type: formValue.relationshipType,
           });
         }
 
@@ -190,14 +225,11 @@ export class NodeModalComponent {
   }
 
   private getParent(parentId: string): Culture | null {
-    let parent: Culture | null = null;
-    this.cultureService
-      .getCultures()
-      .subscribe((cultures) => {
-        parent = cultures.find((c) => c.id === parentId) || null;
-      })
-      .unsubscribe();
-    return parent;
+    return (
+      this.cultureService
+        .getCulturesSignal()()
+        .find((culture) => culture.id === parentId) || null
+    );
   }
 
   onAddChild(): void {
@@ -232,6 +264,10 @@ export class NodeModalComponent {
     }
   }
 
+  formatRelationshipType(relationshipType: string): string {
+    return relationshipType.split('_').join(' ');
+  }
+
   private refreshAutoLabel(): void {
     const formValue = this.cultureForm.getRawValue();
 
@@ -256,7 +292,10 @@ export class NodeModalComponent {
         formValue.filialGeneration,
         formValue.dateCreated,
       );
-      this.cultureForm.patchValue({ label: generatedLabel }, { emitEvent: false });
+      this.cultureForm.patchValue(
+        { label: generatedLabel },
+        { emitEvent: false },
+      );
     } else {
       // Edit/Create root mode - use root strain logic
       const strainInfo = this.resolveStrainCode(formValue.strainPrefix);
@@ -296,11 +335,14 @@ export class NodeModalComponent {
     return `${strainPart}-${typeToken}-${filialPart}-${datePart}`;
   }
 
-  private resolveStrainCode(strainPrefix: string): { strain: string; segment: number } {
+  private resolveStrainCode(strainPrefix: string): {
+    strain: string;
+    segment: number;
+  } {
     if (!this.isRootNode) {
       return {
         strain: this.data.culture?.strain || 'STR-1',
-        segment: this.data.culture?.strainSegment || 1
+        segment: this.data.culture?.strainSegment || 1,
       };
     }
 
@@ -312,7 +354,7 @@ export class NodeModalComponent {
       if (this.data.culture?.strain) {
         return {
           strain: this.data.culture.strain,
-          segment: this.data.culture.strainSegment || 1
+          segment: this.data.culture.strainSegment || 1,
         };
       }
       return this.cultureService.suggestNextStrainCode(

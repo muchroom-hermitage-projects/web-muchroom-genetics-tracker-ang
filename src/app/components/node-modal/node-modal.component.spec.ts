@@ -8,8 +8,12 @@ import {
   MatDialogModule,
 } from '@angular/material/dialog';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { Culture, CultureType, RelationshipType } from '../../models/culture.model';
-import { NO_ERRORS_SCHEMA, Pipe, PipeTransform } from '@angular/core';
+import {
+  Culture,
+  CultureType,
+  RelationshipType,
+} from '../../models/culture.model';
+import { NO_ERRORS_SCHEMA, signal } from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatInputModule } from '@angular/material/input';
@@ -18,59 +22,58 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-
-// Mock Pipe
-@Pipe({name: 'replace'})
-class MockReplacePipe implements PipeTransform {
-  transform(value: string, from: string, to: string): string {
-    return value;
-  }
-}
+import { Mocked } from 'vitest';
+import {
+  NODE_MODAL_MOCK_CULTURE,
+  NODE_MODAL_MOCK_RELATIONSHIP,
+} from '../../../testing/mocks';
 
 // Mock data
-const mockCulture: Culture = {
-  id: 'c1',
-  label: 'Test Culture',
-  type: CultureType.AGAR,
-  strain: 'STR-1',
-  strainSegment: 1,
-  filialGeneration: 'F0',
-  description: 'Test Description',
-  dateCreated: new Date(),
-  metadata: { isArchived: false }
-};
-
-const mockRelationship = {
-  id: 'r1',
-  sourceId: 'p1',
-  targetId: 'c1',
-  type: RelationshipType.TRANSFER
-};
+const mockCulture: Culture = NODE_MODAL_MOCK_CULTURE;
 
 class MockCultureService {
-  getParent(id: string) { return id === 'c1' ? { id: 'p1' } : null; }
-  getParentRelationship(id: string) { return id === 'c1' ? mockRelationship : null; }
-  getStrainOptions() { return [{ prefix: 'STR', label: 'Standard Strain' }]; }
-  suggestTypeToken() { return 'AG1'; }
-  suggestNextStrainCode() { return { strain: 'STR-1', segment: 1 }; }
-  suggestChildStrainCode() { return { strain: 'STR-1', segment: 1 }; }
-  updateRelationship = jasmine.createSpy('updateRelationship');
-  addCulture = jasmine.createSpy('addCulture');
-  addRelationship = jasmine.createSpy('addRelationship');
-  getCultures() { return { subscribe: (fn: any) => fn([{ id: 'p1', strain: 'STR-1', strainSegment: 1 }]), unsubscribe: () => {} }; }
+  private cultures = signal([
+    { id: 'p1', strain: 'STR-1', strainSegment: 1, metadata: {} },
+  ]);
+
+  getParent(id: string) {
+    return id === 'c1' ? { id: 'p1' } : null;
+  }
+  getParentRelationship(id: string) {
+    return id === 'c1' ? NODE_MODAL_MOCK_RELATIONSHIP : null;
+  }
+  getStrainOptions() {
+    return [{ prefix: 'STR', label: 'Standard Strain' }];
+  }
+  suggestTypeToken() {
+    return 'AG1';
+  }
+  suggestNextStrainCode() {
+    return { strain: 'STR-1', segment: 1 };
+  }
+  suggestChildStrainCode() {
+    return { strain: 'STR-1', segment: 1 };
+  }
+  updateRelationship = vi.fn();
+  addCulture = vi.fn().mockReturnValue({ id: 'new1' });
+  addRelationship = vi.fn();
+  getCulturesSignal() {
+    return this.cultures.asReadonly();
+  }
 }
 
 describe('NodeModalComponent', () => {
   let component: NodeModalComponent;
   let fixture: ComponentFixture<NodeModalComponent>;
   let cultureService: MockCultureService;
-  let dialogRefSpy: jasmine.SpyObj<MatDialogRef<NodeModalComponent>>;
+  let dialogRefSpy: Mocked<MatDialogRef<NodeModalComponent>>;
 
   beforeEach(async () => {
-    dialogRefSpy = jasmine.createSpyObj('MatDialogRef', ['close']);
+    dialogRefSpy = {
+      close: vi.fn(),
+    } as Mocked<MatDialogRef<NodeModalComponent>>;
 
     await TestBed.configureTestingModule({
-      declarations: [ NodeModalComponent, MockReplacePipe ],
       imports: [
         ReactiveFormsModule,
         MatDialogModule,
@@ -82,21 +85,26 @@ describe('NodeModalComponent', () => {
         MatButtonModule,
         MatTooltipModule,
         NoopAnimationsModule,
+        NodeModalComponent,
       ],
-      schemas: [ NO_ERRORS_SCHEMA ],
+      schemas: [NO_ERRORS_SCHEMA],
       providers: [
         { provide: CultureService, useClass: MockCultureService },
         { provide: MatDialogRef, useValue: dialogRefSpy },
         { provide: MatDialog, useValue: {} },
-        { provide: MAT_DIALOG_DATA, useValue: { culture: mockCulture, isNew: false } },
-        FormBuilder
-      ]
-    })
-    .compileComponents();
+        {
+          provide: MAT_DIALOG_DATA,
+          useValue: { culture: mockCulture, isNew: false },
+        },
+        FormBuilder,
+      ],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(NodeModalComponent);
     component = fixture.componentInstance;
-    cultureService = TestBed.inject(CultureService) as unknown as MockCultureService;
+    cultureService = TestBed.inject(
+      CultureService,
+    ) as unknown as MockCultureService;
     fixture.detectChanges();
   });
 
@@ -105,19 +113,25 @@ describe('NodeModalComponent', () => {
   });
 
   it('should add relationshipType control if parent relationship exists', () => {
-    expect(component.cultureForm.contains('relationshipType')).toBeTrue();
-    expect(component.cultureForm.get('relationshipType')?.value).toBe(RelationshipType.TRANSFER);
+    expect(component.cultureForm.contains('relationshipType')).toBe(true);
+    expect(component.cultureForm.get('relationshipType')?.value).toBe(
+      RelationshipType.TRANSFER,
+    );
   });
 
   it('should call updateRelationship on save if relationship type changed', () => {
-    component.cultureForm.patchValue({ relationshipType: RelationshipType.CLONE_FROM_FRUIT });
+    component.cultureForm.patchValue({
+      relationshipType: RelationshipType.CLONE_FROM_FRUIT,
+    });
     component.onSave();
-    expect(cultureService.updateRelationship).toHaveBeenCalledWith('r1', { type: RelationshipType.CLONE_FROM_FRUIT });
+    expect(cultureService.updateRelationship).toHaveBeenCalledWith('r1', {
+      type: RelationshipType.CLONE_FROM_FRUIT,
+    });
   });
 
   it('should disable strainPrefix control for non-root nodes', () => {
-    expect(component.isRootNode).toBeFalse();
-    expect(component.cultureForm.get('strainPrefix')?.disabled).toBeTrue();
+    expect(component.isRootNode).toBe(false);
+    expect(component.cultureForm.get('strainPrefix')?.disabled).toBe(true);
   });
 
   it('should enable strainPrefix control for root nodes', () => {
@@ -127,11 +141,11 @@ describe('NodeModalComponent', () => {
       dialogRefSpy,
       TestBed.inject(MatDialog),
       cultureService as any,
-      { culture: rootCulture, isNew: false }
+      { culture: rootCulture, isNew: false },
     );
 
-    expect(rootComponent.isRootNode).toBeTrue();
-    expect(rootComponent.cultureForm.get('strainPrefix')?.disabled).toBeFalse();
+    expect(rootComponent.isRootNode).toBe(true);
+    expect(rootComponent.cultureForm.get('strainPrefix')?.disabled).toBe(false);
   });
 
   it('should enable strainPrefix control for new nodes', () => {
@@ -140,11 +154,11 @@ describe('NodeModalComponent', () => {
       dialogRefSpy,
       TestBed.inject(MatDialog),
       cultureService as any,
-      { culture: mockCulture, isNew: true }
+      { culture: mockCulture, isNew: true },
     );
 
-    expect(newComponent.isRootNode).toBeTrue();
-    expect(newComponent.cultureForm.get('strainPrefix')?.disabled).toBeFalse();
+    expect(newComponent.isRootNode).toBe(true);
+    expect(newComponent.cultureForm.get('strainPrefix')?.disabled).toBe(false);
   });
 
   describe('Add Child Mode', () => {
@@ -154,30 +168,31 @@ describe('NodeModalComponent', () => {
         dialogRefSpy,
         TestBed.inject(MatDialog),
         cultureService as any,
-        { parentId: 'p1' }
+        { parentId: 'p1' },
       );
 
-      expect(childComponent.isRootNode).toBeFalse();
-      expect(childComponent.cultureForm.contains('relationshipType')).toBeTrue();
-      expect(childComponent.cultureForm.get('strainPrefix')?.disabled).toBeTrue();
+      expect(childComponent.isRootNode).toBe(false);
+      expect(childComponent.cultureForm.contains('relationshipType')).toBe(
+        true,
+      );
+      expect(childComponent.cultureForm.get('strainPrefix')?.disabled).toBe(
+        true,
+      );
     });
 
     it('should create new culture and relationship in add-child mode', () => {
-      spyOn(cultureService, 'addCulture').and.returnValue({ id: 'new1' } as any);
-      spyOn(cultureService, 'addRelationship');
-
       const childComponent = new NodeModalComponent(
         TestBed.inject(FormBuilder),
         dialogRefSpy,
         TestBed.inject(MatDialog),
         cultureService as any,
-        { parentId: 'p1' }
+        { parentId: 'p1' },
       );
 
       childComponent.cultureForm.patchValue({
         label: 'New Child',
         type: 'agar',
-        relationshipType: RelationshipType.TRANSFER
+        relationshipType: RelationshipType.TRANSFER,
       });
 
       childComponent.onSave();
@@ -186,7 +201,7 @@ describe('NodeModalComponent', () => {
       expect(cultureService.addRelationship).toHaveBeenCalledWith({
         sourceId: 'p1',
         targetId: 'new1',
-        type: RelationshipType.TRANSFER
+        type: RelationshipType.TRANSFER,
       });
       expect(dialogRefSpy.close).toHaveBeenCalledWith({ success: true });
     });
