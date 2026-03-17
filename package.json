@@ -9,6 +9,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "vitest --config vitest.config.ts",
     "test:coverage": "vitest run --coverage",
+    "test:e2e": "npx playwright test",
     "lint": "ng lint",
     "lint:staged": "npx lint-staged --debug",
     "format": "prettier --write \"src/**/*.{ts,html,scss,css,json}\" && eslint \"src/**/*.ts\" --fix",

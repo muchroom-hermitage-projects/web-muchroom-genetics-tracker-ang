@@ -1,3 +1,4 @@
+import { CommonModule, NgPlural } from '@angular/common';
 import {
   Component,
   AfterViewInit,
@@ -44,6 +45,8 @@ const E2E_CY_HANDLE = '__GENETICS_GRAPH_CY__';
   selector: 'app-genealogy-graph',
   standalone: true,
   imports: [
+    CommonModule,
+    NgPlural,
     FormsModule,
     MatButtonModule,
     MatIconModule,

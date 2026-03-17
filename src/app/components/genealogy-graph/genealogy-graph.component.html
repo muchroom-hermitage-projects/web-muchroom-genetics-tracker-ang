@@ -25,7 +25,12 @@
       </mat-icon>
     </div>
     <span class="toolbar-spacer"></span>
-    <span class="node-count">{{ cultures().length }} nodes</span>
+    <span class="node-count" [ngPlural]="cultures().length">
+      {{ cultures().length }}
+      <ng-template ngPluralCase="=0"> nodes</ng-template>
+      <ng-template ngPluralCase="=1"> node</ng-template>
+      <ng-template ngPluralCase="other"> nodes</ng-template>
+    </span>
   </div>
   <div #cyContainer class="graph-area"></div>
   <div id="cyNavigator" class="cytoscape-navigator"></div>

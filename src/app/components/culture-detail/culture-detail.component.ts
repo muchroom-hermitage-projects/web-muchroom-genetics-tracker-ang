@@ -1,4 +1,3 @@
-// components/culture-detail/culture-detail.component.ts
 import { Component, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
