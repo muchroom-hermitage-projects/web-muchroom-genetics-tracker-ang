@@ -4,15 +4,10 @@ import { GenealogyGraphComponent } from './genealogy-graph.component';
 import { CultureService } from '../../services/culture.service';
 import { GraphBuilderService } from '../../services/graph-builder.service';
 import { MatDialog } from '@angular/material/dialog';
-import { MatButtonModule } from '@angular/material/button';
-import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatIconModule } from '@angular/material/icon';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { FormsModule } from '@angular/forms';
 import { NodeModalComponent } from '../node-modal/node-modal.component';
 import { Culture, Relationship } from '../../models/culture.model';
-import { BehaviorSubject, Observable, of } from 'rxjs';
+import { of } from 'rxjs';
 import {
   GENEALOGY_VISIBLE_CULTURES,
   GENEALOGY_VISIBLE_RELATIONSHIPS,
@@ -55,40 +50,20 @@ vi.mock('cytoscape', () => {
 });
 
 class MockCultureService {
-  private readonly filteredCultures$ = new BehaviorSubject<Culture[]>([]);
-  private readonly relationships$ = new BehaviorSubject<Relationship[]>([]);
-  private readonly selectedNodeId$ = new BehaviorSubject<string | null>(null);
-
   deleteCulture = vi.fn();
   updateCulture = vi.fn();
   setSelectedNode = vi.fn();
 
-  emitFilteredCultures(value: Culture[]) {
-    this.filteredCultures$.next(value);
-  }
-
-  emitRelationships(value: Relationship[]) {
-    this.relationships$.next(value);
-  }
-
-  emitSelectedNodeId(value: string | null) {
-    this.selectedNodeId$.next(value);
-  }
-
-  getCultures(): Observable<Culture[]> {
-    return of([]);
-  }
-
   getFilteredCultures() {
-    return this.filteredCultures$.asObservable();
+    return of([] as Culture[]);
   }
 
   getRelationships() {
-    return this.relationships$.asObservable();
+    return of([] as Relationship[]);
   }
 
   getSelectedNodeId() {
-    return this.selectedNodeId$.asObservable();
+    return of(null);
   }
 }
 
@@ -129,15 +104,7 @@ describe('GenealogyGraphComponent', () => {
     dialogSpy = new DialogSpy();
 
     await TestBed.configureTestingModule({
-      imports: [
-        MatIconModule,
-        MatButtonModule,
-        MatTooltipModule,
-        MatCheckboxModule,
-        FormsModule,
-        NoopAnimationsModule,
-        GenealogyGraphComponent,
-      ],
+      imports: [NoopAnimationsModule, GenealogyGraphComponent],
       providers: [
         { provide: CultureService, useClass: MockCultureService },
         { provide: GraphBuilderService, useClass: MockGraphBuilderService },
@@ -151,10 +118,6 @@ describe('GenealogyGraphComponent', () => {
       CultureService,
     ) as unknown as MockCultureService;
     fixture.detectChanges();
-  });
-
-  it('should create', () => {
-    expect(component).toBeTruthy();
   });
 
   it('filters visible relationships based on current graph state', () => {
@@ -181,7 +144,8 @@ describe('GenealogyGraphComponent', () => {
   it('renders a navigator container in the template', () => {
     const navigatorEl = fixture.nativeElement.querySelector('#cyNavigator');
 
-    expect(navigatorEl).toBeTruthy();
+    expect(navigatorEl).not.toBeNull();
+    expect(navigatorEl.id).toBe('cyNavigator');
   });
 
   it('updates subtree mode label and tooltip when signal changes', () => {
@@ -249,6 +213,10 @@ describe('GenealogyGraphComponent', () => {
     };
 
     expect(() => (component as any).highlightNode('selected')).not.toThrow();
+    expect(warnSpy).toHaveBeenCalledWith(
+      'Error highlighting path:',
+      expect.any(Error),
+    );
     warnSpy.mockRestore();
   });
 
