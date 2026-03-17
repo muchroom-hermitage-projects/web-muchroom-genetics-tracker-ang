@@ -63,8 +63,7 @@ export class GenealogyGraphComponent implements AfterViewInit, OnDestroy {
     edgeSep: 20,
     rankSep: 50,
     rankDir: 'TB',
-    animate: true,
-    animationDuration: 500,
+    animate: false,
     spacingFactor: 1.5,
     nodeDimensionsIncludeLabels: true,
   } as LayoutOptions;
