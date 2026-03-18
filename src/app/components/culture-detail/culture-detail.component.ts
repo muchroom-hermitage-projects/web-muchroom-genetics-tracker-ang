@@ -1,5 +1,5 @@
 // components/culture-detail/culture-detail.component.ts
-import { Component, computed } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -30,6 +30,9 @@ import { NodeModalComponent } from '../node-modal/node-modal.component';
   styleUrls: ['./culture-detail.component.scss'],
 })
 export class CultureDetailComponent {
+  private cultureService = inject(CultureService);
+  private dialog = inject(MatDialog);
+
   readonly selectedNodeId = this.cultureService.getSelectedNodeIdSignal();
   readonly cultures = this.cultureService.getCulturesSignal();
   readonly selectedCulture = computed<Culture | null>(() => {
@@ -47,11 +50,6 @@ export class CultureDetailComponent {
     const nodeId = this.selectedNodeId();
     return nodeId ? this.cultureService.getDescendants(nodeId) : [];
   });
-
-  constructor(
-    private cultureService: CultureService,
-    private dialog: MatDialog,
-  ) {}
 
   // Format date for display
   formatDate(date: Date): string {
