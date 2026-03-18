@@ -40,6 +40,8 @@
 - Add option to define own relation styles (color, thickness, dashed/solid), and save them in localStorage
 - Add option to define own node styles (color, shape, size), and save them in localStorage
 - Add option to define background color, and save it in localStorage
+- Rename context menu options (e.g. "Clean" to "Mark as clean", to make it more clear what they do)
+- Add counters for specific nodes: how many of a given type/contaminated/archived, etc. and let the user chose which counters they will see in the navbar
 
 # Project structure:
 
@@ -49,7 +51,6 @@
 - Add a version for Electron
 - Add a version for mobile (ionic?)
 - Add robust logging (LoggerService)
-- Migrate to zoneless Angular
 - Clean up the "window hack" from GenealogyGraphComponent after migrating to Angular 20
 - Add a list mode (should be more accessible than graph mode), there should be a toggle button to switch between graph and list mode, and the app should remember the selected mode in localStorage
 - Add a "dark mode" toggle, and remember the selected mode in localStorage
