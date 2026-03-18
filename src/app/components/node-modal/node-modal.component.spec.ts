@@ -7,7 +7,7 @@ import {
   MatDialog,
   MatDialogModule,
 } from '@angular/material/dialog';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { ReactiveFormsModule } from '@angular/forms';
 import {
   Culture,
   CultureType,
@@ -62,6 +62,48 @@ class MockCultureService {
   }
 }
 
+/** Shared module imports used across all test groups. */
+const SHARED_IMPORTS = [
+  ReactiveFormsModule,
+  MatDialogModule,
+  MatFormFieldModule,
+  MatSelectModule,
+  MatInputModule,
+  MatCheckboxModule,
+  MatIconModule,
+  MatButtonModule,
+  MatTooltipModule,
+  NoopAnimationsModule,
+  NodeModalComponent,
+];
+
+/**
+ * Creates a fresh TestBed fixture with the given dialog data.
+ * Must be called from beforeEach (before TestBed is instantiated by createComponent).
+ */
+async function createFixture(
+  dialogData: { culture?: Culture; isNew?: boolean; parentId?: string },
+  dialogRefSpy: Mocked<MatDialogRef<NodeModalComponent>>,
+): Promise<ComponentFixture<NodeModalComponent>> {
+  await TestBed.configureTestingModule({
+    imports: SHARED_IMPORTS,
+    schemas: [NO_ERRORS_SCHEMA],
+    providers: [
+      { provide: CultureService, useClass: MockCultureService },
+      { provide: MatDialogRef, useValue: dialogRefSpy },
+      { provide: MatDialog, useValue: {} },
+      { provide: MAT_DIALOG_DATA, useValue: dialogData },
+    ],
+  }).compileComponents();
+
+  const fixture = TestBed.createComponent(NodeModalComponent);
+  fixture.detectChanges();
+  return fixture;
+}
+
+// ---------------------------------------------------------------------------
+// Group 1: edit existing culture with parent (default dialog data)
+// ---------------------------------------------------------------------------
 describe('NodeModalComponent', () => {
   let component: NodeModalComponent;
   let fixture: ComponentFixture<NodeModalComponent>;
@@ -69,43 +111,17 @@ describe('NodeModalComponent', () => {
   let dialogRefSpy: Mocked<MatDialogRef<NodeModalComponent>>;
 
   beforeEach(async () => {
-    dialogRefSpy = {
-      close: vi.fn(),
-    } as Mocked<MatDialogRef<NodeModalComponent>>;
-
-    await TestBed.configureTestingModule({
-      imports: [
-        ReactiveFormsModule,
-        MatDialogModule,
-        MatFormFieldModule,
-        MatSelectModule,
-        MatInputModule,
-        MatCheckboxModule,
-        MatIconModule,
-        MatButtonModule,
-        MatTooltipModule,
-        NoopAnimationsModule,
-        NodeModalComponent,
-      ],
-      schemas: [NO_ERRORS_SCHEMA],
-      providers: [
-        { provide: CultureService, useClass: MockCultureService },
-        { provide: MatDialogRef, useValue: dialogRefSpy },
-        { provide: MatDialog, useValue: {} },
-        {
-          provide: MAT_DIALOG_DATA,
-          useValue: { culture: mockCulture, isNew: false },
-        },
-        FormBuilder,
-      ],
-    }).compileComponents();
-
-    fixture = TestBed.createComponent(NodeModalComponent);
+    dialogRefSpy = { close: vi.fn() } as Mocked<
+      MatDialogRef<NodeModalComponent>
+    >;
+    fixture = await createFixture(
+      { culture: mockCulture, isNew: false },
+      dialogRefSpy,
+    );
     component = fixture.componentInstance;
     cultureService = TestBed.inject(
       CultureService,
     ) as unknown as MockCultureService;
-    fixture.detectChanges();
   });
 
   it('should create', () => {
@@ -133,77 +149,87 @@ describe('NodeModalComponent', () => {
     expect(component.isRootNode).toBe(false);
     expect(component.cultureForm.get('strainPrefix')?.disabled).toBe(true);
   });
+});
 
-  it('should enable strainPrefix control for root nodes', () => {
+// ---------------------------------------------------------------------------
+// Group 2: root culture and new-culture modes
+// Each test calls createFixture directly so TestBed is set up fresh per test.
+// ---------------------------------------------------------------------------
+describe('NodeModalComponent – root / new culture', () => {
+  let dialogRefSpy: Mocked<MatDialogRef<NodeModalComponent>>;
+
+  beforeEach(() => {
+    dialogRefSpy = { close: vi.fn() } as Mocked<
+      MatDialogRef<NodeModalComponent>
+    >;
+  });
+
+  it('should enable strainPrefix control for root nodes', async () => {
     const rootCulture = { ...mockCulture, id: 'root1' };
-    const rootComponent = new NodeModalComponent(
-      TestBed.inject(FormBuilder),
-      dialogRefSpy,
-      TestBed.inject(MatDialog),
-      cultureService as any,
+    const rootFixture = await createFixture(
       { culture: rootCulture, isNew: false },
+      dialogRefSpy,
     );
+    const rootComponent = rootFixture.componentInstance;
 
     expect(rootComponent.isRootNode).toBe(true);
     expect(rootComponent.cultureForm.get('strainPrefix')?.disabled).toBe(false);
   });
 
-  it('should enable strainPrefix control for new nodes', () => {
-    const newComponent = new NodeModalComponent(
-      TestBed.inject(FormBuilder),
-      dialogRefSpy,
-      TestBed.inject(MatDialog),
-      cultureService as any,
+  it('should enable strainPrefix control for new nodes', async () => {
+    const newFixture = await createFixture(
       { culture: mockCulture, isNew: true },
+      dialogRefSpy,
     );
+    const newComponent = newFixture.componentInstance;
 
     expect(newComponent.isRootNode).toBe(true);
     expect(newComponent.cultureForm.get('strainPrefix')?.disabled).toBe(false);
   });
+});
 
-  describe('Add Child Mode', () => {
-    it('should initialize in add-child mode when parentId is provided', () => {
-      const childComponent = new NodeModalComponent(
-        TestBed.inject(FormBuilder),
-        dialogRefSpy,
-        TestBed.inject(MatDialog),
-        cultureService as any,
-        { parentId: 'p1' },
-      );
+// ---------------------------------------------------------------------------
+// Group 3: add-child mode
+// ---------------------------------------------------------------------------
+describe('NodeModalComponent – Add Child Mode', () => {
+  let dialogRefSpy: Mocked<MatDialogRef<NodeModalComponent>>;
 
-      expect(childComponent.isRootNode).toBe(false);
-      expect(childComponent.cultureForm.contains('relationshipType')).toBe(
-        true,
-      );
-      expect(childComponent.cultureForm.get('strainPrefix')?.disabled).toBe(
-        true,
-      );
+  beforeEach(() => {
+    dialogRefSpy = { close: vi.fn() } as Mocked<
+      MatDialogRef<NodeModalComponent>
+    >;
+  });
+
+  it('should initialize in add-child mode when parentId is provided', async () => {
+    const childFixture = await createFixture({ parentId: 'p1' }, dialogRefSpy);
+    const childComponent = childFixture.componentInstance;
+
+    expect(childComponent.isRootNode).toBe(false);
+    expect(childComponent.cultureForm.contains('relationshipType')).toBe(true);
+    expect(childComponent.cultureForm.get('strainPrefix')?.disabled).toBe(true);
+  });
+
+  it('should create new culture and relationship in add-child mode', async () => {
+    const childFixture = await createFixture({ parentId: 'p1' }, dialogRefSpy);
+    const childComponent = childFixture.componentInstance;
+    const cultureService = TestBed.inject(
+      CultureService,
+    ) as unknown as MockCultureService;
+
+    childComponent.cultureForm.patchValue({
+      label: 'New Child',
+      type: 'agar',
+      relationshipType: RelationshipType.TRANSFER,
     });
 
-    it('should create new culture and relationship in add-child mode', () => {
-      const childComponent = new NodeModalComponent(
-        TestBed.inject(FormBuilder),
-        dialogRefSpy,
-        TestBed.inject(MatDialog),
-        cultureService as any,
-        { parentId: 'p1' },
-      );
+    childComponent.onSave();
 
-      childComponent.cultureForm.patchValue({
-        label: 'New Child',
-        type: 'agar',
-        relationshipType: RelationshipType.TRANSFER,
-      });
-
-      childComponent.onSave();
-
-      expect(cultureService.addCulture).toHaveBeenCalled();
-      expect(cultureService.addRelationship).toHaveBeenCalledWith({
-        sourceId: 'p1',
-        targetId: 'new1',
-        type: RelationshipType.TRANSFER,
-      });
-      expect(dialogRefSpy.close).toHaveBeenCalledWith({ success: true });
+    expect(cultureService.addCulture).toHaveBeenCalled();
+    expect(cultureService.addRelationship).toHaveBeenCalledWith({
+      sourceId: 'p1',
+      targetId: 'new1',
+      type: RelationshipType.TRANSFER,
     });
+    expect(dialogRefSpy.close).toHaveBeenCalledWith({ success: true });
   });
 });
