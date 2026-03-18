@@ -71,10 +71,6 @@
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.0"
   },
-  "overrides": {
-    "zone.js": "0.16.1",
-    "typescript": "5.9.3"
-  },
   "lint-staged": {
     "*.ts": [
       "eslint --fix --max-warnings=0",
