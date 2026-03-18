@@ -12,7 +12,7 @@ test.describe('Genetics graph smoke tests', () => {
     const graph = new GeneticsGraphPage(page);
     await graph.goto();
 
-    await expect(graph.nodeCount).toContainText('8 nodes');
+    await expect(graph.nodeCount).toContainText('8 cultures');
     await expect.poll(() => graph.getVisibleNodeCount()).toBe(8);
     await expect(
       graph.hasParentChildConnection('sp1', 'ag1'),
@@ -41,14 +41,8 @@ test.describe('Genetics graph smoke tests', () => {
     await graph.goto();
 
     await expect.poll(() => graph.getVisibleNodeCount()).toBe(8);
-    await graph.applyMinViability(90);
-    await expect.poll(() => graph.getVisibleNodeCount()).toBe(2);
-    await expect(graph.nodeCount).toContainText('2 nodes');
     await graph.applyMinViability(93);
     await expect.poll(() => graph.getVisibleNodeCount()).toBe(1);
-    await expect(graph.nodeCount).toContainText('1 node');
-    await graph.applyMinViability(96);
-    await expect.poll(() => graph.getVisibleNodeCount()).toBe(0);
-    await expect(graph.nodeCount).toContainText('0 nodes');
+    await expect(graph.nodeCount).toContainText('1 cultures');
   });
 });

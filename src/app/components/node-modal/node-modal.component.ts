@@ -1,6 +1,6 @@
 // components/node-modal/node-modal.component.ts
-import { Component, Inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject } from '@angular/core';
+import { TitleCasePipe } from '@angular/common';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ReactiveFormsModule } from '@angular/forms';
 import {
@@ -27,9 +27,8 @@ import { CultureService } from '../../services/culture.service';
 
 @Component({
   selector: 'app-node-modal',
-  standalone: true,
   imports: [
-    CommonModule,
+    TitleCasePipe,
     ReactiveFormsModule,
     MatDialogModule,
     MatFormFieldModule,
@@ -44,6 +43,16 @@ import { CultureService } from '../../services/culture.service';
   styleUrls: ['./node-modal.component.scss'],
 })
 export class NodeModalComponent {
+  private fb = inject(FormBuilder);
+  private dialogRef = inject<MatDialogRef<NodeModalComponent>>(MatDialogRef);
+  private dialog = inject(MatDialog);
+  private cultureService = inject(CultureService);
+  data = inject<{
+    culture?: Culture;
+    isNew?: boolean;
+    parentId?: string;
+  }>(MAT_DIALOG_DATA);
+
   cultureForm: FormGroup;
   cultureTypes = CULTURE_TYPE_OPTIONS;
   strainOptions: StrainOption[] = [];
@@ -56,14 +65,9 @@ export class NodeModalComponent {
   private originalStrainPrefix = '';
   private parentRelationshipId: string | null = null;
 
-  constructor(
-    private fb: FormBuilder,
-    private dialogRef: MatDialogRef<NodeModalComponent>,
-    private dialog: MatDialog,
-    private cultureService: CultureService,
-    @Inject(MAT_DIALOG_DATA)
-    public data: { culture?: Culture; isNew?: boolean; parentId?: string },
-  ) {
+  constructor() {
+    const data = this.data;
+
     this.isNew = data.isNew || false;
 
     // Check if this is add-child mode

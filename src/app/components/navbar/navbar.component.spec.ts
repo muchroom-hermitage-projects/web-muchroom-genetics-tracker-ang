@@ -3,10 +3,13 @@ import { NavbarComponent } from './navbar.component';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { CultureService } from '../../services/culture.service';
-import { DataImportExportService } from '../../services/data-import-export.service';
+import { CulturePersistenceService } from '../../services/data-import-export.service';
 import { NodeModalComponent } from '../node-modal/node-modal.component';
 import { AboutModalComponent } from '../about-modal/about-modal.component';
-import { APP_EXPORT_JSON } from '../../../testing/mocks';
+import {
+  APP_EXPORT_JSON,
+  CULTURE_SERVICE_VALID_IMPORT_PAYLOAD,
+} from '../../../testing/mocks';
 import { CultureType } from '../../models/culture.model';
 
 describe('NavbarComponent', () => {
@@ -14,8 +17,12 @@ describe('NavbarComponent', () => {
   let component: NavbarComponent;
   let dialogMock: { open: ReturnType<typeof vi.fn> };
   let snackBarMock: { open: ReturnType<typeof vi.fn> };
-  let cultureServiceMock: { addCulture: ReturnType<typeof vi.fn> };
-  let dataImportExportServiceMock: {
+  let cultureServiceMock: {
+    addCulture: ReturnType<typeof vi.fn>;
+    exportDataAsJson: ReturnType<typeof vi.fn>;
+    applyImportedData: ReturnType<typeof vi.fn>;
+  };
+  let persistenceServiceMock: {
     createExportPackage: ReturnType<typeof vi.fn>;
     importFromFile: ReturnType<typeof vi.fn>;
   };
@@ -26,18 +33,20 @@ describe('NavbarComponent', () => {
         .fn()
         .mockReturnValue({ afterClosed: () => ({ subscribe: vi.fn() }) }),
     };
-    snackBarMock = {
-      open: vi.fn(),
-    };
+    snackBarMock = { open: vi.fn() };
     cultureServiceMock = {
       addCulture: vi.fn(),
+      exportDataAsJson: vi.fn().mockReturnValue(APP_EXPORT_JSON),
+      applyImportedData: vi.fn(),
     };
-    dataImportExportServiceMock = {
+    persistenceServiceMock = {
       createExportPackage: vi.fn().mockReturnValue({
         blob: new Blob([APP_EXPORT_JSON], { type: 'application/json' }),
         filename: 'mycology-data-test.json',
       }),
-      importFromFile: vi.fn().mockResolvedValue(undefined),
+      importFromFile: vi
+        .fn()
+        .mockResolvedValue(CULTURE_SERVICE_VALID_IMPORT_PAYLOAD),
     };
 
     await TestBed.configureTestingModule({
@@ -47,8 +56,8 @@ describe('NavbarComponent', () => {
         { provide: MatSnackBar, useValue: snackBarMock },
         { provide: CultureService, useValue: cultureServiceMock },
         {
-          provide: DataImportExportService,
-          useValue: dataImportExportServiceMock,
+          provide: CulturePersistenceService,
+          useValue: persistenceServiceMock,
         },
       ],
     }).compileComponents();
@@ -63,9 +72,11 @@ describe('NavbarComponent', () => {
   });
 
   it('opens the add root culture dialog from the toolbar button', () => {
-    const button: any = Array.from(
+    const button: HTMLElement | undefined = Array.from(
       fixture.nativeElement.querySelectorAll('button'),
-    ).find((el: any) => el.textContent?.includes('Add Root Culture'));
+    ).find((el: unknown) =>
+      (el as HTMLElement).textContent?.includes('Add Root Culture'),
+    ) as HTMLElement | undefined;
 
     button?.click();
 
@@ -79,12 +90,7 @@ describe('NavbarComponent', () => {
     dialogMock.open.mockReturnValue({
       afterClosed: () => ({
         subscribe: (cb: (value: unknown) => void) =>
-          cb({
-            updates: {
-              label: 'New Root',
-              type: CultureType.SPORE,
-            },
-          }),
+          cb({ updates: { label: 'New Root', type: CultureType.SPORE } }),
       }),
     });
 
@@ -95,65 +101,59 @@ describe('NavbarComponent', () => {
     );
   });
 
-  it('triggers export through the data import/export service', () => {
-    const mockAnchor = {
-      click: vi.fn(),
-      setAttribute: vi.fn(),
-      href: '',
-      download: '',
-    };
-    const createElementSpy = vi
-      .spyOn(document, 'createElement')
-      .mockReturnValue(mockAnchor as unknown as HTMLAnchorElement);
-    const originalCreateObjectURL = URL.createObjectURL;
-    const originalRevokeObjectURL = URL.revokeObjectURL;
+  it('triggers export: calls exportDataAsJson then createExportPackage with the JSON', () => {
+    const mockAnchor = { click: vi.fn(), href: '', download: '' };
+    vi.spyOn(document, 'createElement').mockReturnValue(
+      mockAnchor as unknown as HTMLAnchorElement,
+    );
     URL.createObjectURL = vi.fn().mockReturnValue('blob:mock-url');
     URL.revokeObjectURL = vi.fn();
 
     component.exportData();
 
-    expect(dataImportExportServiceMock.createExportPackage).toHaveBeenCalled();
+    expect(cultureServiceMock.exportDataAsJson).toHaveBeenCalled();
+    expect(persistenceServiceMock.createExportPackage).toHaveBeenCalledWith(
+      APP_EXPORT_JSON,
+    );
     expect(snackBarMock.open).toHaveBeenCalledWith('Data exported', 'Close', {
       duration: 2500,
     });
-
-    createElementSpy.mockRestore();
-    URL.createObjectURL = originalCreateObjectURL;
-    URL.revokeObjectURL = originalRevokeObjectURL;
   });
 
-  it('triggers import through the data import/export service on file selection', async () => {
+  it('imports file: calls importFromFile then applyImportedData with the result', async () => {
     const file = new File([APP_EXPORT_JSON], 'data.json', {
       type: 'application/json',
     });
     const input = document.createElement('input');
-    Object.defineProperty(input, 'files', {
-      value: [file],
-    });
+    Object.defineProperty(input, 'files', { value: [file] });
     input.value = 'data.json';
-    const event = { target: input } as any as Event;
 
-    await component.onImportFileSelected(event);
+    await component.onImportFileSelected({ target: input } as unknown as Event);
 
-    expect(dataImportExportServiceMock.importFromFile).toHaveBeenCalledWith(
-      file,
+    expect(persistenceServiceMock.importFromFile).toHaveBeenCalledWith(file);
+    expect(cultureServiceMock.applyImportedData).toHaveBeenCalledWith(
+      CULTURE_SERVICE_VALID_IMPORT_PAYLOAD,
     );
+    expect(snackBarMock.open).toHaveBeenCalledWith('Data imported', 'Close', {
+      duration: 2500,
+    });
     expect(input.value).toBe('');
   });
 
   it('does nothing when no file is selected', async () => {
     const input = document.createElement('input');
     Object.defineProperty(input, 'files', { value: [] });
-    input.value = '';
 
-    await component.onImportFileSelected({ target: input } as any as Event);
+    await component.onImportFileSelected({
+      target: input,
+    } as unknown as Event);
 
-    expect(dataImportExportServiceMock.importFromFile).not.toHaveBeenCalled();
+    expect(persistenceServiceMock.importFromFile).not.toHaveBeenCalled();
     expect(snackBarMock.open).not.toHaveBeenCalled();
   });
 
   it('shows an error snackbar when import fails', async () => {
-    dataImportExportServiceMock.importFromFile.mockRejectedValueOnce(
+    persistenceServiceMock.importFromFile.mockRejectedValueOnce(
       new Error('Boom'),
     );
     const input = document.createElement('input');
@@ -161,7 +161,9 @@ describe('NavbarComponent', () => {
       value: [new File(['{}'], 'bad.json')],
     });
 
-    await component.onImportFileSelected({ target: input } as any as Event);
+    await component.onImportFileSelected({
+      target: input,
+    } as unknown as Event);
 
     expect(snackBarMock.open).toHaveBeenCalledWith(
       'Import failed: Boom',
@@ -178,10 +180,13 @@ describe('NavbarComponent', () => {
     const fakeInput = Object.assign(document.createElement('input'), {
       click: vi.fn(),
     }) as HTMLInputElement;
-    const originalCreateObjectURL = URL.createObjectURL;
-    const originalRevokeObjectURL = URL.revokeObjectURL;
     URL.createObjectURL = vi.fn().mockReturnValue('blob:mock-url');
     URL.revokeObjectURL = vi.fn();
+    vi.spyOn(document, 'createElement').mockReturnValue({
+      click: vi.fn(),
+      href: '',
+      download: '',
+    } as unknown as HTMLElement);
 
     component.handleMenuAction('import', fakeInput);
     component.handleMenuAction('export', fakeInput);
@@ -190,9 +195,6 @@ describe('NavbarComponent', () => {
     expect(importSpy).toHaveBeenCalledWith(fakeInput);
     expect(exportSpy).toHaveBeenCalledTimes(1);
     expect(aboutSpy).toHaveBeenCalledTimes(1);
-
-    URL.createObjectURL = originalCreateObjectURL;
-    URL.revokeObjectURL = originalRevokeObjectURL;
   });
 
   it('opens the about dialog with expected sizing', () => {
@@ -206,9 +208,8 @@ describe('NavbarComponent', () => {
 
   it('clicks the provided input when importData is invoked', () => {
     const clickSpy = vi.fn();
-    const input = { click: clickSpy } as unknown as HTMLInputElement;
 
-    component.importData(input);
+    component.importData({ click: clickSpy } as unknown as HTMLInputElement);
 
     expect(clickSpy).toHaveBeenCalledTimes(1);
   });

@@ -6,6 +6,7 @@ import {
   FilterOptions,
   PersistedData,
 } from './culture.service';
+import { CulturePersistenceService } from './data-import-export.service';
 import {
   Culture,
   CultureType,
@@ -22,7 +23,12 @@ import {
 
 describe('CultureService', () => {
   let service: CultureService;
-  const storageKey = 'mycology-genetics-tracker-data-v1';
+  let persistenceMock: {
+    loadFromStorage: ReturnType<typeof vi.fn>;
+    saveToStorage: ReturnType<typeof vi.fn>;
+    serialize: ReturnType<typeof vi.fn>;
+    deserialize: ReturnType<typeof vi.fn>;
+  };
 
   const setState = (params: {
     cultures?: Culture[];
@@ -54,8 +60,19 @@ describe('CultureService', () => {
 
   beforeEach(() => {
     localStorage.clear();
+    persistenceMock = {
+      loadFromStorage: vi.fn().mockReturnValue(null),
+      saveToStorage: vi.fn(),
+      serialize: vi
+        .fn()
+        .mockImplementation((data: unknown) => JSON.stringify(data, null, 2)),
+      deserialize: vi.fn(),
+    };
     TestBed.configureTestingModule({
-      providers: [CultureService],
+      providers: [
+        CultureService,
+        { provide: CulturePersistenceService, useValue: persistenceMock },
+      ],
     });
     service = TestBed.inject(CultureService);
   });
@@ -386,55 +403,81 @@ describe('CultureService', () => {
     expect(options.some((option) => option.prefix === 'XYZ')).toBe(true);
   });
 
-  it('exports and imports valid data payload', () => {
+  it('exports data by delegating to persistence service serialize', () => {
     setState({
       cultures: CULTURE_SERVICE_TREE_CULTURES,
       relationships: CULTURE_SERVICE_TREE_RELATIONSHIPS,
       strains: CULTURE_SERVICE_STRAINS,
-      filters: DEFAULT_FILTERS,
-      selectedNodeId: 'root',
     });
 
-    const exported = JSON.parse(service.exportDataAsJson()) as PersistedData;
-    expect(exported.version).toBe(1);
-    expect(exported.cultures.length).toBe(CULTURE_SERVICE_TREE_CULTURES.length);
+    service.exportDataAsJson();
 
-    const importedPayload = {
-      ...CULTURE_SERVICE_VALID_IMPORT_PAYLOAD,
-      selectedNodeId: 'missing-node',
-    };
-    service.importDataFromJson(JSON.stringify(importedPayload));
+    expect(persistenceMock.serialize).toHaveBeenCalledWith(
+      expect.objectContaining({
+        version: 1,
+        cultures: CULTURE_SERVICE_TREE_CULTURES,
+      }),
+    );
+  });
+
+  it('importDataFromJson deserializes via persistence service and applies signals', () => {
+    persistenceMock.deserialize.mockReturnValue(
+      CULTURE_SERVICE_VALID_IMPORT_PAYLOAD,
+    );
+
+    service.importDataFromJson('{}');
+
+    expect(persistenceMock.deserialize).toHaveBeenCalledWith('{}');
+    expect(getCulturesState().length).toBe(
+      CULTURE_SERVICE_TREE_CULTURES.length,
+    );
+    expect((service as any).selectedNodeId()).toBe('childA');
+  });
+
+  it('importDataFromJson propagates errors thrown by persistence service deserialize', () => {
+    persistenceMock.deserialize.mockImplementation(() => {
+      throw new Error('Invalid JSON format');
+    });
+
+    expect(() => service.importDataFromJson('bad')).toThrow(
+      'Invalid JSON format',
+    );
+  });
+
+  it('applyImportedData sets all signals from a PersistedData object', () => {
+    service.applyImportedData(
+      CULTURE_SERVICE_VALID_IMPORT_PAYLOAD as PersistedData,
+    );
 
     expect(getCulturesState().length).toBe(
       CULTURE_SERVICE_TREE_CULTURES.length,
     );
-    expect((service as any).selectedNodeId()).toBeNull();
+    expect((service as any).selectedNodeId()).toBe('childA');
   });
 
-  it('throws descriptive errors for invalid import payloads', () => {
-    expect(() => service.importDataFromJson('not-json')).toThrow(
-      'Invalid JSON format',
+  it('loads persisted data from storage on construction', () => {
+    const loadMock = vi
+      .fn()
+      .mockReturnValue(CULTURE_SERVICE_VALID_IMPORT_PAYLOAD);
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        CultureService,
+        {
+          provide: CulturePersistenceService,
+          useValue: {
+            ...persistenceMock,
+            loadFromStorage: loadMock,
+            saveToStorage: vi.fn(),
+          },
+        },
+      ],
+    });
+    const svc = TestBed.inject(CultureService);
+
+    expect((svc as any).cultures().length).toBe(
+      CULTURE_SERVICE_TREE_CULTURES.length,
     );
-
-    expect(() =>
-      service.importDataFromJson(JSON.stringify({ cultures: [] })),
-    ).toThrow('cultures, relationships, and strains arrays');
-
-    expect(() =>
-      service.importDataFromJson(
-        JSON.stringify({
-          ...CULTURE_SERVICE_VALID_IMPORT_PAYLOAD,
-          relationships: [
-            {
-              id: 'bad',
-              sourceId: 'root',
-              targetId: 'missing',
-              type: RelationshipType.TRANSFER,
-            },
-          ],
-        }),
-      ),
-    ).toThrow('Relationships reference missing culture IDs');
   });
 
   it('searches cultures by label, description, and notes', async () => {
@@ -462,34 +505,6 @@ describe('CultureService', () => {
     expect(stats.archived).toBe(1);
     expect(stats.byType[CultureType.AGAR]).toBe(3);
     expect(stats.byStrain['POS-1']).toBe(3);
-  });
-
-  it('handles storage helpers and parser utility methods', () => {
-    const setItemSpy = vi.spyOn(Storage.prototype, 'setItem');
-    const getItemSpy = vi.spyOn(Storage.prototype, 'getItem');
-
-    (service as any).saveToStorage();
-    expect(setItemSpy).toHaveBeenCalled();
-
-    (service as any).readStorage();
-    expect(getItemSpy).toHaveBeenCalledWith(storageKey);
-
-    expect((service as any).letterSuffixToIndex('A')).toBe(1);
-    expect((service as any).letterSuffixToIndex('AA')).toBe(27);
-    expect((service as any).letterSuffixToIndex('A1')).toBe(0);
-
-    expect((service as any).indexToLetterSuffix(1)).toBe('A');
-    expect((service as any).indexToLetterSuffix(27)).toBe('AA');
-    expect((service as any).indexToLetterSuffix(0)).toBe('A');
-
-    expect((service as any).parseStrainCode('POS-4')).toEqual({
-      prefix: 'POS',
-      index: 4,
-    });
-    expect((service as any).parseStrainCode('invalid value')).toEqual({
-      prefix: 'INVALID VALUE',
-      index: 0,
-    });
   });
 
   it('handles tree traversal duplicates and root resolution in graph utilities', () => {
@@ -526,31 +541,12 @@ describe('CultureService', () => {
       },
     ];
 
-    setState({
-      cultures: branchingCultures,
-      relationships: branchingRels,
-    });
+    setState({ cultures: branchingCultures, relationships: branchingRels });
 
-    const treeIds = (service as any).getTreeCultureIds('c') as Set<string>;
-    expect(Array.from(treeIds).sort()).toEqual(['a', 'b', 'c', 'root']);
-
-    expect((service as any).findRootId('c', branchingRels)).toBe('root');
-
-    const cyclicRels: Relationship[] = [
-      {
-        id: 'c1',
-        sourceId: 'x',
-        targetId: 'y',
-        type: RelationshipType.TRANSFER,
-      },
-      {
-        id: 'c2',
-        sourceId: 'y',
-        targetId: 'x',
-        type: RelationshipType.TRANSFER,
-      },
-    ];
-    const cycleRoot = (service as any).findRootId('x', cyclicRels);
-    expect(['x', 'y']).toContain(cycleRoot);
+    // getDescendants must not loop or duplicate results in a diamond DAG
+    const descendants = service.getDescendants('root');
+    const ids = descendants.map((c) => c.id);
+    expect(ids.sort()).toEqual(['a', 'b', 'c'].sort());
+    expect(ids.length).toBe(new Set(ids).size); // no duplicates
   });
 });

@@ -21,7 +21,6 @@ import { CULTURE_TYPE_OPTIONS } from '../../models/culture.model';
 
 @Component({
   selector: 'app-filter-panel',
-  standalone: true,
   imports: [
     ReactiveFormsModule,
     MatFormFieldModule,

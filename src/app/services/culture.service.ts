@@ -17,7 +17,6 @@ import {
   Strain,
   CultureType,
   RelationshipType,
-  getCultureTypeAbbreviation,
 } from '../models/culture.model';
 import { v4 as uuidv4 } from 'uuid';
 import { STRAIN_FAMILY_OPTIONS, StrainOption } from '../models/strains.model';
@@ -27,6 +26,16 @@ import {
   strainsExample,
 } from '../../assets/documents/example-culture-data';
 import { environment } from '../../environments/environment';
+import { CulturePersistenceService } from './data-import-export.service';
+import {
+  extractStrainPrefix,
+  suggestNextStrainCode as utilSuggestNextStrainCode,
+  suggestChildStrainCode as utilSuggestChildStrainCode,
+  extractTypeTokenFromLabel as utilExtractTypeTokenFromLabel,
+  isTransferNumberingType,
+  getNextBaseToken as utilGetNextBaseToken,
+  getNextTransferToken as utilGetNextTransferToken,
+} from '../utils/culture-suggestion.util';
 
 export interface FilterOptions {
   strain: string;
@@ -51,7 +60,7 @@ export interface PersistedData {
   providedIn: 'root',
 })
 export class CultureService {
-  private readonly STORAGE_KEY = 'mycology-genetics-tracker-data-v1';
+  private readonly persistenceService = inject(CulturePersistenceService);
   private readonly injector = inject(Injector);
 
   private readonly cultures: WritableSignal<Culture[]> = signal([]);
@@ -94,12 +103,13 @@ export class CultureService {
   );
 
   constructor() {
-    const loaded = this.loadFromStorage();
-    // TODO: Remove when done testing.
-    if (!loaded && !environment.production) {
+    const savedData = this.persistenceService.loadFromStorage();
+    if (savedData) {
+      this.applyImportedData(savedData);
+    } else if (!environment.production) {
+      // TODO: Remove when done testing.
       this.loadSampleData();
     }
-    // END TODO
     this.setupAutoPersistence();
   }
 
@@ -141,7 +151,7 @@ export class CultureService {
     const existingPrefixes = new Set(options.map((option) => option.prefix));
 
     this.strains().forEach((strain) => {
-      const prefix = this.extractStrainPrefix(strain.id);
+      const prefix = extractStrainPrefix(strain.id);
       if (!existingPrefixes.has(prefix)) {
         options.push({
           prefix,
@@ -162,22 +172,7 @@ export class CultureService {
     prefix: string,
     currentCultureId?: string,
   ): { strain: string; segment: number } {
-    const normalizedPrefix = (prefix || 'STR').toUpperCase();
-    const maxIndex = this.cultures()
-      .filter((culture) => culture.id !== currentCultureId)
-      .reduce((max, culture) => {
-        const parsed = this.parseStrainCode(culture.strain);
-        if (parsed.prefix !== normalizedPrefix) {
-          return max;
-        }
-        return Math.max(max, parsed.index);
-      }, 0);
-
-    const nextIndex = maxIndex + 1;
-    return {
-      strain: `${normalizedPrefix}-${nextIndex}`,
-      segment: nextIndex,
-    };
+    return utilSuggestNextStrainCode(this.cultures(), prefix, currentCultureId);
   }
 
   /**
@@ -190,30 +185,11 @@ export class CultureService {
     childType: CultureType,
     relationshipType: RelationshipType | string,
   ): { strain: string; segment: number } {
-    const parent = this.cultures().find((culture) => culture.id === parentId);
-    if (!parent) {
-      return { strain: 'STR-1', segment: 1 };
-    }
-
-    // Check if this is a spore collection (sexual reproduction / filial generation change)
-    const isCollectingSpores =
-      relationshipType === RelationshipType.COLLECTING_SPORES;
-
-    if (isCollectingSpores) {
-      // Increment the strain segment for new filial generation
-      const parentPrefix = this.extractStrainPrefix(parent.strain);
-      const newSegment = (parent.strainSegment || 1) + 1;
-      return {
-        strain: `${parentPrefix}-${newSegment}`,
-        segment: newSegment,
-      };
-    }
-
-    // For all other relationships, inherit parent's strain and segment
-    return {
-      strain: parent.strain,
-      segment: parent.strainSegment || 1,
-    };
+    return utilSuggestChildStrainCode(
+      this.cultures(),
+      parentId,
+      relationshipType,
+    );
   }
 
   suggestTypeToken(params: {
@@ -223,10 +199,8 @@ export class CultureService {
     currentCultureId?: string;
     currentLabel?: string;
   }): string {
-    const abbreviation = getCultureTypeAbbreviation(params.type);
-
     if (params.currentLabel) {
-      const existingToken = this.extractTypeTokenFromLabel(
+      const existingToken = utilExtractTypeTokenFromLabel(
         params.currentLabel,
         params.type,
       );
@@ -237,42 +211,36 @@ export class CultureService {
 
     const isTransfer =
       params.relationshipType === RelationshipType.TRANSFER &&
-      this.isTransferNumberingType(params.type) &&
+      isTransferNumberingType(params.type) &&
       !!params.parentId;
 
     if (isTransfer && params.parentId) {
-      const parent = this.cultures().find(
-        (culture) => culture.id === params.parentId,
-      );
+      const parent = this.cultures().find((c) => c.id === params.parentId);
       const parentToken = parent
-        ? this.extractTypeTokenFromLabel(parent.label, params.type)
+        ? utilExtractTypeTokenFromLabel(parent.label, params.type)
         : null;
-
       if (parentToken) {
-        return this.getNextTransferToken(
+        return utilGetNextTransferToken(
           params.parentId,
           params.type,
           parentToken,
+          this.cultures(),
+          this.relationships(),
         );
       }
     }
 
-    return this.getNextBaseToken(
+    return utilGetNextBaseToken(
       params.type,
-      params.parentId,
+      this.cultures(),
       params.currentCultureId,
+      this.relationships(),
+      params.parentId,
     );
   }
 
   extractTypeTokenFromLabel(label: string, type: CultureType): string | null {
-    const abbreviation = getCultureTypeAbbreviation(type);
-    const escapedAbbreviation = abbreviation.replace(
-      /[.*+?^${}()|[\]\\]/g,
-      '\\$&',
-    );
-    const regex = new RegExp(`(^|-)(${escapedAbbreviation}[A-Z0-9]+)-`);
-    const match = label.match(regex);
-    return match ? match[2] : null;
+    return utilExtractTypeTokenFromLabel(label, type);
   }
 
   // New: Update filters
@@ -297,24 +265,20 @@ export class CultureService {
   }
 
   exportDataAsJson(): string {
-    return JSON.stringify(this.buildPersistedData(), null, 2);
+    return this.persistenceService.serialize(this.buildPersistedData());
   }
 
   importDataFromJson(raw: string): void {
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(raw);
-    } catch {
-      throw new Error('Invalid JSON format');
-    }
+    const normalized = this.persistenceService.deserialize(raw);
+    this.applyImportedData(normalized);
+  }
 
-    const normalized = this.normalizeImportedData(parsed);
-    this.cultures.set(normalized.cultures);
-    this.relationships.set(normalized.relationships);
-    this.strains.set(normalized.strains);
-    this.filters.set(normalized.filters);
-    this.selectedNodeId.set(normalized.selectedNodeId);
-    this.saveToStorage();
+  applyImportedData(data: PersistedData): void {
+    this.cultures.set(data.cultures);
+    this.relationships.set(data.relationships);
+    this.strains.set(data.strains);
+    this.filters.set(data.filters);
+    this.selectedNodeId.set(data.selectedNodeId);
   }
 
   // New: Apply filters to cultures
@@ -390,9 +354,9 @@ export class CultureService {
       updated[index] = { ...updated[index], ...updates };
 
       // If strain prefix changed (species/family changed), propagate to descendants
-      const oldPrefix = this.extractStrainPrefix(oldCulture.strain);
+      const oldPrefix = extractStrainPrefix(oldCulture.strain);
       const newPrefix = updates.strain
-        ? this.extractStrainPrefix(updates.strain)
+        ? extractStrainPrefix(updates.strain)
         : oldPrefix;
 
       if (newPrefix !== oldPrefix && updates.strain) {
@@ -542,17 +506,18 @@ export class CultureService {
   getDescendants(nodeId: string): Culture[] {
     const descendants: Culture[] = [];
     const toVisit = [nodeId];
-    const visited = new Set<string>();
-    const cultures = this.cultures();
+    const seen = new Set<string>([nodeId]);
 
     while (toVisit.length > 0) {
       const currentId = toVisit.shift()!;
-      if (visited.has(currentId)) continue;
-      visited.add(currentId);
-
       const children = this.getChildren(currentId);
-      descendants.push(...children);
-      toVisit.push(...children.map((c) => c.id));
+      for (const child of children) {
+        if (!seen.has(child.id)) {
+          seen.add(child.id);
+          descendants.push(child);
+          toVisit.push(child.id);
+        }
+      }
     }
 
     return descendants;
@@ -645,52 +610,10 @@ export class CultureService {
         this.strains();
         this.filters();
         this.selectedNodeId();
-        this.saveToStorage();
+        this.persistenceService.saveToStorage(this.buildPersistedData());
       },
       { injector: this.injector },
     );
-  }
-
-  private loadFromStorage(): boolean {
-    const raw = this.readStorage();
-    if (!raw) {
-      return false;
-    }
-
-    try {
-      const parsed = JSON.parse(raw) as unknown;
-      const normalized = this.normalizeImportedData(parsed);
-      this.cultures.set(normalized.cultures);
-      this.relationships.set(normalized.relationships);
-      this.strains.set(normalized.strains);
-      this.filters.set(normalized.filters);
-      this.selectedNodeId.set(normalized.selectedNodeId);
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  private saveToStorage(): void {
-    try {
-      if (typeof localStorage === 'undefined') {
-        return;
-      }
-      localStorage.setItem(this.STORAGE_KEY, this.exportDataAsJson());
-    } catch {
-      // Ignore storage errors (quota/private mode) to keep app usable.
-    }
-  }
-
-  private readStorage(): string | null {
-    try {
-      if (typeof localStorage === 'undefined') {
-        return null;
-      }
-      return localStorage.getItem(this.STORAGE_KEY);
-    } catch {
-      return null;
-    }
   }
 
   private buildPersistedData(): PersistedData {
@@ -701,300 +624,6 @@ export class CultureService {
       strains: this.strains(),
       filters: this.filters(),
       selectedNodeId: this.selectedNodeId(),
-    };
-  }
-
-  private normalizeImportedData(input: unknown): PersistedData {
-    if (!input || typeof input !== 'object') {
-      throw new Error('JSON root must be an object');
-    }
-
-    const data = input as Partial<PersistedData>;
-    if (
-      !Array.isArray(data.cultures) ||
-      !Array.isArray(data.relationships) ||
-      !Array.isArray(data.strains)
-    ) {
-      throw new Error(
-        'JSON must include cultures, relationships, and strains arrays',
-      );
-    }
-
-    const cultures = data.cultures.map((culture) => ({
-      ...culture,
-      dateCreated: new Date(culture.dateCreated),
-      strainSegment: culture.strainSegment || 1, // Ensure strainSegment is set for legacy data
-      metadata: {
-        ...culture.metadata,
-        isArchived: culture.metadata?.isArchived ?? false,
-      },
-    })) as Culture[];
-
-    const strains = data.strains.map((strain) => ({
-      ...strain,
-      dateAcquired: new Date(strain.dateAcquired),
-    })) as Strain[];
-
-    if (
-      cultures.some(
-        (culture) =>
-          !culture.id ||
-          !culture.label ||
-          !culture.type ||
-          Number.isNaN(culture.dateCreated.getTime()),
-      )
-    ) {
-      throw new Error('Invalid culture entries in JSON');
-    }
-
-    if (
-      strains.some(
-        (strain) =>
-          !strain.id ||
-          !strain.species ||
-          Number.isNaN(strain.dateAcquired.getTime()),
-      )
-    ) {
-      throw new Error('Invalid strain entries in JSON');
-    }
-
-    const cultureIds = new Set(cultures.map((culture) => culture.id));
-    const relationships = data.relationships as Relationship[];
-
-    if (
-      relationships.some(
-        (relationship) =>
-          !relationship.id ||
-          !relationship.sourceId ||
-          !relationship.targetId ||
-          !relationship.type,
-      )
-    ) {
-      throw new Error('Invalid relationship entries in JSON');
-    }
-
-    if (
-      relationships.some(
-        (relationship) =>
-          !cultureIds.has(relationship.sourceId) ||
-          !cultureIds.has(relationship.targetId),
-      )
-    ) {
-      throw new Error('Relationships reference missing culture IDs');
-    }
-
-    const filters: FilterOptions = {
-      strain: data.filters?.strain ?? '',
-      type: data.filters?.type ?? '',
-      filialGeneration: data.filters?.filialGeneration ?? '',
-      showArchived: data.filters?.showArchived ?? false,
-      showContaminated: data.filters?.showContaminated ?? true,
-      showClean: data.filters?.showClean ?? true,
-      minViability: data.filters?.minViability ?? 0,
-    };
-
-    const selectedNodeId =
-      data.selectedNodeId && cultureIds.has(data.selectedNodeId)
-        ? data.selectedNodeId
-        : null;
-
-    return {
-      version: 1,
-      cultures,
-      relationships,
-      strains,
-      filters,
-      selectedNodeId,
-    };
-  }
-
-  private isTransferNumberingType(type: CultureType): boolean {
-    return (
-      type === CultureType.AGAR ||
-      type === CultureType.LIQUID_CULTURE ||
-      type === CultureType.GRAIN_SPAWN
-    );
-  }
-
-  private getNextBaseToken(
-    type: CultureType,
-    parentId?: string,
-    currentCultureId?: string,
-  ): string {
-    const abbreviation = getCultureTypeAbbreviation(type);
-    const treeCultureIds: Set<string> | null = parentId
-      ? this.getTreeCultureIds(parentId)
-      : currentCultureId
-      ? this.getTreeCultureIds(currentCultureId)
-      : null;
-    const cultures = this.cultures()
-      .filter((culture) => culture.id !== currentCultureId)
-      .filter((culture) => !treeCultureIds || treeCultureIds.has(culture.id));
-
-    const baseRegex = new RegExp(`^${abbreviation}(\\d+)$`);
-    const maxIndex = cultures.reduce((max, culture) => {
-      const token = this.extractTypeTokenFromLabel(culture.label, type);
-      if (!token) {
-        return max;
-      }
-      const match = token.match(baseRegex);
-      if (!match) {
-        return max;
-      }
-      return Math.max(max, Number(match[1]));
-    }, 0);
-
-    return `${abbreviation}${maxIndex + 1}`;
-  }
-
-  private getNextTransferToken(
-    parentId: string,
-    type: CultureType,
-    parentToken: string,
-  ): string {
-    const lastChar = parentToken.charAt(parentToken.length - 1);
-    const letterMode = /\d/.test(lastChar);
-    const suffixes = this.getTransferChildSuffixes(
-      parentId,
-      type,
-      parentToken,
-      letterMode,
-    );
-
-    if (letterMode) {
-      const maxLetterIndex = suffixes.reduce((max, suffix) => {
-        const index = this.letterSuffixToIndex(suffix);
-        return index > max ? index : max;
-      }, 0);
-      return `${parentToken}${this.indexToLetterSuffix(maxLetterIndex + 1)}`;
-    }
-
-    const maxNumber = suffixes.reduce((max, suffix) => {
-      const parsed = Number(suffix);
-      return Number.isNaN(parsed) ? max : Math.max(max, parsed);
-    }, 0);
-    return `${parentToken}${maxNumber + 1}`;
-  }
-
-  private getTransferChildSuffixes(
-    parentId: string,
-    type: CultureType,
-    parentToken: string,
-    letterMode: boolean,
-  ): string[] {
-    const relationships = this.relationships();
-    const culturesById = new Map(
-      this.cultures().map((culture) => [culture.id, culture]),
-    );
-    const suffixRegex = letterMode
-      ? new RegExp(`^${parentToken}([A-Z]+)$`)
-      : new RegExp(`^${parentToken}(\\d+)$`);
-
-    return relationships
-      .filter(
-        (relationship) =>
-          relationship.sourceId === parentId &&
-          relationship.type === RelationshipType.TRANSFER,
-      )
-      .map((relationship) => culturesById.get(relationship.targetId))
-      .filter(
-        (culture): culture is Culture => !!culture && culture.type === type,
-      )
-      .map((culture) => this.extractTypeTokenFromLabel(culture.label, type))
-      .filter((token): token is string => !!token)
-      .map((token) => token.match(suffixRegex))
-      .filter((match): match is RegExpMatchArray => !!match)
-      .map((match) => match[1]);
-  }
-
-  private getTreeCultureIds(nodeId: string): Set<string> {
-    const relationships = this.relationships();
-    const rootId = this.findRootId(nodeId, relationships);
-    const bySource = new Map<string, string[]>();
-
-    relationships.forEach((relationship) => {
-      const children = bySource.get(relationship.sourceId) ?? [];
-      children.push(relationship.targetId);
-      bySource.set(relationship.sourceId, children);
-    });
-
-    const visited = new Set<string>();
-    const queue = [rootId];
-
-    while (queue.length > 0) {
-      const current = queue.shift()!;
-      if (visited.has(current)) {
-        continue;
-      }
-      visited.add(current);
-      const children = bySource.get(current) ?? [];
-      children.forEach((childId) => {
-        if (!visited.has(childId)) {
-          queue.push(childId);
-        }
-      });
-    }
-
-    return visited;
-  }
-
-  private findRootId(nodeId: string, relationships: Relationship[]): string {
-    const incomingByTarget = new Map<string, string>();
-    relationships.forEach((relationship) => {
-      if (!incomingByTarget.has(relationship.targetId)) {
-        incomingByTarget.set(relationship.targetId, relationship.sourceId);
-      }
-    });
-
-    let current = nodeId;
-    const seen = new Set<string>();
-    while (incomingByTarget.has(current) && !seen.has(current)) {
-      seen.add(current);
-      current = incomingByTarget.get(current)!;
-    }
-    return current;
-  }
-
-  private letterSuffixToIndex(input: string): number {
-    let index = 0;
-    for (let i = 0; i < input.length; i += 1) {
-      const code = input.charCodeAt(i) - 64;
-      if (code < 1 || code > 26) {
-        return 0;
-      }
-      index = index * 26 + code;
-    }
-    return index;
-  }
-
-  private indexToLetterSuffix(index: number): string {
-    let value = index;
-    let output = '';
-    while (value > 0) {
-      value -= 1;
-      const char = String.fromCharCode(65 + (value % 26));
-      output = `${char}${output}`;
-      value = Math.floor(value / 26);
-    }
-    return output || 'A';
-  }
-
-  private extractStrainPrefix(strainCode: string): string {
-    return this.parseStrainCode(strainCode).prefix;
-  }
-
-  private parseStrainCode(strainCode: string): {
-    prefix: string;
-    index: number;
-  } {
-    const normalized = (strainCode || '').toUpperCase().trim();
-    const match = normalized.match(/^([A-Z]+(?:-[A-Z]+)?)(?:-(\d+))?$/);
-    if (!match) {
-      return { prefix: normalized || 'STR', index: 0 };
-    }
-    return {
-      prefix: match[1],
-      index: match[2] ? Number(match[2]) : 0,
     };
   }
 }
