@@ -1,0 +1,148 @@
+<!-- components/node-modal/node-modal.component.html -->
+<h2 mat-dialog-title>
+  {{
+    data.parentId
+      ? 'Add Child Culture'
+      : isNew
+      ? 'Add New Culture'
+      : 'Edit Culture'
+  }}
+  @if (isContaminated) {
+  <span class="contaminated-label">(contaminated)</span>
+  }
+</h2>
+
+<mat-dialog-content>
+  @if (data.parentId) {
+  <p class="parent-info">Parent ID: {{ data.parentId }}</p>
+  }
+
+  <form [formGroup]="cultureForm" class="culture-form">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Label</mat-label>
+      <input
+        matInput
+        formControlName="label"
+        [readonly]="!isManualLabel"
+        placeholder="Auto-generated from fields below"
+      />
+      <button
+        mat-icon-button
+        matSuffix
+        type="button"
+        (click)="toggleLabelEdit()"
+        [matTooltip]="
+          isManualLabel
+            ? 'Disable manual label editing'
+            : 'Enable manual label editing'
+        "
+      >
+        <mat-icon>edit</mat-icon>
+      </button>
+      <mat-hint>{{
+        isManualLabel
+          ? 'Manual edit mode enabled'
+          : 'Auto-generated. Click pencil to edit manually.'
+      }}</mat-hint>
+    </mat-form-field>
+
+    <div class="form-row">
+      <mat-form-field appearance="outline" class="half-width">
+        <mat-label>Type</mat-label>
+        <mat-select formControlName="type">
+          @for (type of cultureTypes; track type.value) {
+          <mat-option [value]="type.value">
+            {{ type.label }}
+          </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="half-width">
+        <mat-label>Filial Generation</mat-label>
+        <input
+          matInput
+          formControlName="filialGeneration"
+          placeholder="F0, F1, F1-T1"
+        />
+        <mat-hint>e.g., F0, F1, F1-T1</mat-hint>
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Strain Family</mat-label>
+      <mat-select formControlName="strainPrefix">
+        @for (strain of strainOptions; track strain.prefix) {
+        <mat-option [value]="strain.prefix">
+          {{ strain.label }}
+        </mat-option>
+        }
+      </mat-select>
+      @if (!isRootNode) {
+      <mat-hint>Inherited from parent culture</mat-hint>
+      }
+    </mat-form-field>
+
+    @if (cultureForm.contains('relationshipType')) {
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Relationship type with the parent node</mat-label>
+      <mat-select formControlName="relationshipType">
+        @for (rel of relationshipTypes; track rel) {
+        <mat-option [value]="rel">
+          {{ formatRelationshipType(rel) | titlecase }}
+        </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    }
+
+    <div class="form-row">
+      <mat-form-field appearance="outline" class="half-width">
+        <mat-label>Creation Date & Time</mat-label>
+        <input matInput type="datetime-local" formControlName="dateCreated" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="half-width">
+        <mat-label>Source</mat-label>
+        <input
+          matInput
+          formControlName="source"
+          placeholder="Vendor, wild, etc."
+        />
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Description</mat-label>
+      <textarea matInput formControlName="description" rows="2"></textarea>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Notes</mat-label>
+      <textarea matInput formControlName="notes" rows="3"></textarea>
+    </mat-form-field>
+
+    <div class="checkbox-row">
+      <mat-checkbox formControlName="isArchived">Archived</mat-checkbox>
+      <mat-checkbox formControlName="isContaminated">Contaminated</mat-checkbox>
+    </div>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onClose()">Close</button>
+  @if (!isNew && !data.parentId) {
+  <button mat-button color="warn" (click)="onDelete()">Delete</button>
+  } @if (!isNew && !data.parentId) {
+  <button mat-raised-button color="primary" (click)="onAddChild()">
+    <mat-icon>add</mat-icon> Add Child
+  </button>
+  }
+  <button
+    mat-raised-button
+    color="primary"
+    (click)="onSave()"
+    [disabled]="!cultureForm.valid"
+  >
+    {{ data.parentId ? 'Create' : isNew ? 'Create' : 'Save' }}
+  </button>
+</mat-dialog-actions>

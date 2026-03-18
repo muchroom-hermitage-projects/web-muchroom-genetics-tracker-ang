@@ -1,0 +1,25 @@
+<h2 mat-dialog-title>About</h2>
+
+<mat-dialog-content class="about-content">
+  <h3>Mycology Genetics Tracker</h3>
+  <p>
+    This app tracks mushroom culture lineage, relationships, and key metadata
+    across spores, agar, liquid culture, grain spawn, fruit, clones, and slants.
+  </p>
+
+  <h4>Current Data Format (version 1)</h4>
+  <p>
+    Data is persisted and imported/exported as JSON with this top-level shape:
+  </p>
+
+  <pre>{{ dataFormatExample }}</pre>
+
+  <p>
+    Culture dates are serialized as JSON date strings and restored to Date
+    objects on import.
+  </p>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Close</button>
+</mat-dialog-actions>

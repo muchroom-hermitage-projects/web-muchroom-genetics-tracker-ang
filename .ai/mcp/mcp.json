@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "angular-cli": {
+      "command": "npx.cmd",
+      "args": ["-y", "@angular/cli", "mcp"]
+    },
+    "playwright": {
+      "command": "npx.cmd",
+      "args": ["@playwright/mcp@latest"]
+    },
+    "context7": {
+      "command": "npx.cmd",
+      "args": ["-y", "@upstash/context7-mcp", "--api-key", "YOUR_API_KEY"]
+    }
+  }
+}

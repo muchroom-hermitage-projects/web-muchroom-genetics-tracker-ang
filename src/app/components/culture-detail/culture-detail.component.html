@@ -1,0 +1,194 @@
+<!-- components/culture-detail/culture-detail.component.html -->
+@if (selectedCulture()) {
+<div class="detail-panel">
+  <div class="detail-header">
+    <button
+      mat-icon-button
+      (click)="closeDetail()"
+      class="close-btn"
+      matTooltip="Close"
+    >
+      <mat-icon>close</mat-icon>
+    </button>
+    <h3>Culture Details</h3>
+    <span class="header-spacer"></span>
+    <button
+      mat-icon-button
+      [matMenuTriggerFor]="menu"
+      matTooltip="More options"
+    >
+      <mat-icon>more_vert</mat-icon>
+    </button>
+    <mat-menu #menu="matMenu">
+      @if (!isArchived()) {
+      <button mat-menu-item (click)="archiveCulture()">
+        <mat-icon>archive</mat-icon>
+        <span>Archive</span>
+      </button>
+      } @if (isArchived()) {
+      <button mat-menu-item (click)="restoreCulture()">
+        <mat-icon>unarchive</mat-icon>
+        <span>Restore</span>
+      </button>
+      }
+      <mat-divider></mat-divider>
+      <button mat-menu-item (click)="deleteCulture()" color="warn">
+        <mat-icon>delete</mat-icon>
+        <span>Delete</span>
+      </button>
+    </mat-menu>
+  </div>
+  <div class="detail-content">
+    <!-- Main Info Card -->
+    <mat-card class="info-card" [class.archived]="isArchived()">
+      <mat-card-header>
+        <div
+          mat-card-avatar
+          class="type-icon"
+          [style.backgroundColor]="getTypeColor(selectedCulture()!.type)"
+        >
+          <mat-icon>{{ getTypeIcon(selectedCulture()!.type) }}</mat-icon>
+        </div>
+        <mat-card-title>{{ selectedCulture()!.label }}</mat-card-title>
+        <mat-card-subtitle>
+          {{ selectedCulture()!.type | titlecase }}
+          @if (isArchived()) {
+          <span class="archived-badge">(Archived)</span>
+          }
+        </mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="info-grid">
+          <div class="info-row">
+            <span class="info-label">Strain:</span>
+            <span class="info-value">{{
+              selectedCulture()!.strain || 'Not specified'
+            }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Filial Generation:</span>
+            <span class="info-value">{{
+              selectedCulture()!.filialGeneration
+            }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Created:</span>
+            <span class="info-value">{{
+              formatDate(selectedCulture()!.dateCreated)
+            }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Source:</span>
+            <span class="info-value">{{
+              selectedCulture()!.source || 'Unknown'
+            }}</span>
+          </div>
+          @if (selectedCulture()!.metadata?.viability) {
+          <div class="info-row">
+            <span class="info-label">Viability:</span>
+            <span class="info-value">{{ getViability() }}</span>
+          </div>
+          }
+        </div>
+        @if (selectedCulture()!.description) {
+        <div class="description-section">
+          <h4>Description</h4>
+          <p>{{ selectedCulture()!.description }}</p>
+        </div>
+        } @if (selectedCulture()!.notes) {
+        <div class="notes-section">
+          <h4>Notes</h4>
+          <p>{{ selectedCulture()!.notes }}</p>
+        </div>
+        }
+      </mat-card-content>
+    </mat-card>
+    <!-- Ancestors Card -->
+    @if (ancestors().length > 0) {
+    <mat-card class="lineage-card">
+      <mat-card-header>
+        <mat-icon mat-card-avatar>arrow_upward</mat-icon>
+        <mat-card-title>Lineage</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="lineage-list">
+          @for (ancestor of ancestors(); track ancestor.id) {
+          <div class="lineage-item" (click)="selectCulture(ancestor.id)">
+            <span class="lineage-label">{{ ancestor.label }}</span>
+            <span class="lineage-type">({{ ancestor.type }})</span>
+            <mat-icon class="lineage-arrow">arrow_forward</mat-icon>
+          </div>
+          }
+          <div class="lineage-item current">
+            <span class="lineage-label">{{ selectedCulture()!.label }}</span>
+            <span class="lineage-type">(current)</span>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+    }
+    <!-- Descendants Card -->
+    @if (descendants().length > 0) {
+    <mat-card class="descendants-card">
+      <mat-card-header>
+        <mat-icon mat-card-avatar>arrow_downward</mat-icon>
+        <mat-card-title
+          >Descendants ({{ descendants().length }})</mat-card-title
+        >
+      </mat-card-header>
+      <mat-card-content>
+        <div class="descendants-list">
+          <mat-chip-set>
+            @for (desc of descendants(); track desc.id) {
+            <mat-chip
+              (click)="selectCulture(desc.id)"
+              [class]="'type-' + desc.type"
+              matTooltip="{{ desc.type }}: {{
+                desc.description || 'No description'
+              }}"
+            >
+              {{ desc.label }}
+              <span class="chip-type">{{ desc.type }}</span>
+            </mat-chip>
+            }
+          </mat-chip-set>
+        </div>
+      </mat-card-content>
+    </mat-card>
+    }
+    <!-- Empty State for No Descendants -->
+    @if (descendants().length === 0 && selectedCulture()) {
+    <mat-card class="empty-card">
+      <mat-card-content>
+        <p>No descendants yet. Add a child culture to continue the line.</p>
+      </mat-card-content>
+    </mat-card>
+    }
+    <!-- Action Buttons -->
+    <div class="detail-actions">
+      <button
+        mat-raised-button
+        color="primary"
+        (click)="editCulture()"
+        matTooltip="Edit this culture"
+      >
+        <mat-icon>edit</mat-icon> Edit
+      </button>
+      <button
+        mat-raised-button
+        color="accent"
+        (click)="addChild()"
+        matTooltip="Add a child culture"
+      >
+        <mat-icon>add</mat-icon> Add Child
+      </button>
+    </div>
+  </div>
+</div>
+} @else {
+<div class="no-selection">
+  <mat-icon class="no-selection-icon">account_tree</mat-icon>
+  <h3>No Culture Selected</h3>
+  <p>Click on a node in the graph to view its details</p>
+</div>
+}
