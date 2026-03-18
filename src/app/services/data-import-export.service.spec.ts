@@ -75,8 +75,8 @@ describe('DataImportExportService', () => {
         onerror: null as null | (() => void),
         result: APP_EXPORT_JSON,
       };
-      vi.spyOn(window, 'FileReader').mockReturnValue(
-        mockFileReader as unknown as FileReader,
+      vi.spyOn(window, 'FileReader').mockImplementation(
+        function () { return mockFileReader; } as unknown as typeof FileReader,
       );
 
       const promise = service.importFromFile(file);
@@ -121,8 +121,8 @@ describe('DataImportExportService', () => {
         onerror: null as null | (() => void),
         result: '{invalid',
       };
-      vi.spyOn(window, 'FileReader').mockReturnValue(
-        mockFileReader as unknown as FileReader,
+      vi.spyOn(window, 'FileReader').mockImplementation(
+        function () { return mockFileReader; } as unknown as typeof FileReader,
       );
       cultureServiceMock.importDataFromJson.mockImplementation(() => {
         throw new Error('Invalid JSON format');
@@ -144,8 +144,8 @@ describe('DataImportExportService', () => {
         onerror: null as null | (() => void),
         result: APP_EXPORT_JSON,
       };
-      vi.spyOn(window, 'FileReader').mockReturnValue(
-        mockFileReader as unknown as FileReader,
+      vi.spyOn(window, 'FileReader').mockImplementation(
+        function () { return mockFileReader; } as unknown as typeof FileReader,
       );
 
       const promise = service.importFromFile(file);

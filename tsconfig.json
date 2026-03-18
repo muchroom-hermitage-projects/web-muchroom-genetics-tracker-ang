@@ -19,7 +19,6 @@
     "target": "es2022",
     "module": "ESNext",
     "skipLibCheck": true,
-    "lib": ["es2022", "dom"],
     "useDefineForClassFields": false,
     "types": ["vitest/globals"]
   },
