@@ -111,10 +111,17 @@ describe('NodeModalComponent', () => {
   let dialogRefSpy: Mocked<MatDialogRef<NodeModalComponent>>;
 
   beforeEach(async () => {
-    dialogRefSpy = { close: vi.fn() } as Mocked<MatDialogRef<NodeModalComponent>>;
-    fixture = await createFixture({ culture: mockCulture, isNew: false }, dialogRefSpy);
+    dialogRefSpy = { close: vi.fn() } as Mocked<
+      MatDialogRef<NodeModalComponent>
+    >;
+    fixture = await createFixture(
+      { culture: mockCulture, isNew: false },
+      dialogRefSpy,
+    );
     component = fixture.componentInstance;
-    cultureService = TestBed.inject(CultureService) as unknown as MockCultureService;
+    cultureService = TestBed.inject(
+      CultureService,
+    ) as unknown as MockCultureService;
   });
 
   it('should create', () => {
@@ -152,7 +159,9 @@ describe('NodeModalComponent – root / new culture', () => {
   let dialogRefSpy: Mocked<MatDialogRef<NodeModalComponent>>;
 
   beforeEach(() => {
-    dialogRefSpy = { close: vi.fn() } as Mocked<MatDialogRef<NodeModalComponent>>;
+    dialogRefSpy = { close: vi.fn() } as Mocked<
+      MatDialogRef<NodeModalComponent>
+    >;
   });
 
   it('should enable strainPrefix control for root nodes', async () => {
@@ -186,7 +195,9 @@ describe('NodeModalComponent – Add Child Mode', () => {
   let dialogRefSpy: Mocked<MatDialogRef<NodeModalComponent>>;
 
   beforeEach(() => {
-    dialogRefSpy = { close: vi.fn() } as Mocked<MatDialogRef<NodeModalComponent>>;
+    dialogRefSpy = { close: vi.fn() } as Mocked<
+      MatDialogRef<NodeModalComponent>
+    >;
   });
 
   it('should initialize in add-child mode when parentId is provided', async () => {

@@ -51,7 +51,7 @@ export class NodeModalComponent {
     culture?: Culture;
     isNew?: boolean;
     parentId?: string;
-}>(MAT_DIALOG_DATA);
+  }>(MAT_DIALOG_DATA);
 
   cultureForm: FormGroup;
   cultureTypes = CULTURE_TYPE_OPTIONS;

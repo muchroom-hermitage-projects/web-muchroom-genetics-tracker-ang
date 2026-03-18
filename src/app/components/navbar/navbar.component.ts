@@ -10,7 +10,7 @@ import { NodeModalComponent } from '../node-modal/node-modal.component';
 import { AboutModalComponent } from '../about-modal/about-modal.component';
 import { CultureService } from '../../services/culture.service';
 import { CultureType } from '../../models/culture.model';
-import { DataImportExportService } from '../../services/data-import-export.service';
+import { CulturePersistenceService } from '../../services/data-import-export.service';
 
 type NavbarMenuAction = 'export' | 'import' | 'about';
 
@@ -36,7 +36,7 @@ export class NavbarComponent {
   private readonly dialog = inject(MatDialog);
   private readonly cultureService = inject(CultureService);
   private readonly snackBar = inject(MatSnackBar);
-  private readonly dataImportExportService = inject(DataImportExportService);
+  private readonly persistenceService = inject(CulturePersistenceService);
 
   readonly menuItems: NavbarMenuItem[] = [
     { id: 'export', label: 'Export Data' },
@@ -71,7 +71,8 @@ export class NavbarComponent {
   }
 
   exportData(): void {
-    const exportPackage = this.dataImportExportService.createExportPackage();
+    const json = this.cultureService.exportDataAsJson();
+    const exportPackage = this.persistenceService.createExportPackage(json);
     const url = URL.createObjectURL(exportPackage.blob);
     const anchor = document.createElement('a');
     anchor.href = url;
@@ -93,7 +94,8 @@ export class NavbarComponent {
     }
 
     try {
-      await this.dataImportExportService.importFromFile(file);
+      const data = await this.persistenceService.importFromFile(file);
+      this.cultureService.applyImportedData(data);
       this.snackBar.open('Data imported', 'Close', { duration: 2500 });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Import failed';
