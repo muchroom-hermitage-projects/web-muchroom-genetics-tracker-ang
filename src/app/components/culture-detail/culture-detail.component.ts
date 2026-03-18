@@ -1,6 +1,6 @@
 // components/culture-detail/culture-detail.component.ts
 import { Component, computed, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { TitleCasePipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
@@ -16,7 +16,7 @@ import { NodeModalComponent } from '../node-modal/node-modal.component';
 @Component({
   selector: 'app-culture-detail',
   imports: [
-    CommonModule,
+    TitleCasePipe,
     MatButtonModule,
     MatTooltipModule,
     MatIconModule,

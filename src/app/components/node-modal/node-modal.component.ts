@@ -1,6 +1,6 @@
 // components/node-modal/node-modal.component.ts
 import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { TitleCasePipe } from '@angular/common';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ReactiveFormsModule } from '@angular/forms';
 import {
@@ -28,7 +28,7 @@ import { CultureService } from '../../services/culture.service';
 @Component({
   selector: 'app-node-modal',
   imports: [
-    CommonModule,
+    TitleCasePipe,
     ReactiveFormsModule,
     MatDialogModule,
     MatFormFieldModule,
