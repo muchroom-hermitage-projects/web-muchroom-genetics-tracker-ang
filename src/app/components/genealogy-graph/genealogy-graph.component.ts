@@ -42,7 +42,6 @@ const E2E_CY_HANDLE = '__GENETICS_GRAPH_CY__';
 
 @Component({
   selector: 'app-genealogy-graph',
-  standalone: true,
   imports: [
     FormsModule,
     MatButtonModule,

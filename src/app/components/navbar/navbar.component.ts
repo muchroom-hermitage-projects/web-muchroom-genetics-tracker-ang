@@ -22,7 +22,6 @@ interface NavbarMenuItem {
 
 @Component({
   selector: 'app-navbar',
-  standalone: true,
   imports: [
     MatToolbarModule,
     MatButtonModule,

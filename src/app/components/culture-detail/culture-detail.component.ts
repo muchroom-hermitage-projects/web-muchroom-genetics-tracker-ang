@@ -15,7 +15,6 @@ import { NodeModalComponent } from '../node-modal/node-modal.component';
 
 @Component({
   selector: 'app-culture-detail',
-  standalone: true,
   imports: [
     CommonModule,
     MatButtonModule,

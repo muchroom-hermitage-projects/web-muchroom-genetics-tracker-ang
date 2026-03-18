@@ -27,7 +27,6 @@ import { CultureService } from '../../services/culture.service';
 
 @Component({
   selector: 'app-node-modal',
-  standalone: true,
   imports: [
     CommonModule,
     ReactiveFormsModule,
